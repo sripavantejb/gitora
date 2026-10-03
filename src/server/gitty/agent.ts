@@ -231,12 +231,10 @@ export async function* runAgent(
           turn.kind === "tool_calls"
             ? {
                 kind: "calls",
-                calls: turn.calls
-                  .slice(0, MAX_CALLS_PER_ROUND)
-                  .map((call) => ({
-                    tool: call.name,
-                    arguments: parseToolArguments(call.arguments),
-                  })),
+                calls: turn.calls.slice(0, MAX_CALLS_PER_ROUND).map((call) => ({
+                  tool: call.name,
+                  arguments: parseToolArguments(call.arguments),
+                })),
               }
             : decisionFromText(turn.text);
       } catch (error) {
