@@ -298,19 +298,16 @@ describe("OpenAICompatibleProvider", () => {
   it("reports an endpoint without tool support", async () => {
     vi.stubGlobal(
       "fetch",
-      vi
-        .fn()
-        .mockResolvedValue(
-          Response.json(
-            {
-              error: {
-                message:
-                  '"auto" tool choice requires --enable-auto-tool-choice',
-              },
+      vi.fn().mockResolvedValue(
+        Response.json(
+          {
+            error: {
+              message: '"auto" tool choice requires --enable-auto-tool-choice',
             },
-            { status: 400 },
-          ),
+          },
+          { status: 400 },
         ),
+      ),
     );
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
     await expect(
