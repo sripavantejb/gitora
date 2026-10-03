@@ -10,7 +10,9 @@ import { SHOP_FILES, fixtureRepository } from "../test-fixture";
 import { toolSpecs } from "../tools";
 import { backoffDelay, isLocalEndpoint, postWithRetry } from "./http";
 import { OpenAICompatibleProvider } from "./openai-compatible";
-import { resolveAiConfig } from "./provider";
+import { FallbackProvider } from "./fallback";
+import { GOOGLE_OPENAI_BASE_URL, resolveAiConfig } from "./provider";
+import { stripThoughts, ThoughtFilter } from "./thoughts";
 import { REDACTED, redactSecrets, withRedaction } from "./redact";
 import {
   AiProviderError,
@@ -52,12 +54,42 @@ describe("resolveAiConfig", () => {
     expect(config.problem).toMatch(/local address .* Vercel/);
   });
 
-  it("falls back to Google AI Studio with only an API key", () => {
+  it("uses Google AI Studio's OpenAI-compatible endpoint with only an API key", () => {
     expect(resolveAiConfig({ GEMMA_API_KEY: "k" })).toMatchObject({
-      style: "google",
+      style: "google-openai",
+      model: "gemma-4-26b-a4b-it",
+      baseUrl: GOOGLE_OPENAI_BASE_URL,
       problem: undefined,
     });
+    expect(resolveAiConfig({ GEMMA_API_KEY: "k" }).fallback).toBeUndefined();
+    expect(
+      resolveAiConfig({ GEMMA_API_KEY: "k", GEMMA_API_STYLE: "google" }).style,
+    ).toBe("google");
     expect(resolveAiConfig({}).problem).toMatch(/GEMMA_BASE_URL/);
+  });
+
+  it("adds Google AI Studio as the fallback for another primary", () => {
+    const config = resolveAiConfig({ HF_TOKEN: "hf", GEMMA_API_KEY: "k" });
+    expect(config.style).toBe("huggingface");
+    expect(config.fallback).toMatchObject({
+      style: "google-openai",
+      model: "gemma-4-26b-a4b-it",
+      apiKey: "k",
+    });
+    expect(
+      resolveAiConfig({
+        HF_TOKEN: "hf",
+        GEMMA_API_KEY: "k",
+        GEMMA_FALLBACK: "off",
+      }).fallback,
+    ).toBeUndefined();
+    const vercelLocal = resolveAiConfig({
+      VERCEL: "1",
+      GEMMA_BASE_URL: "http://localhost:8000/v1",
+      GEMMA_API_KEY: "k",
+    });
+    expect(vercelLocal.problem).toMatch(/local address/);
+    expect(vercelLocal.fallback?.style).toBe("google-openai");
   });
 
   it("ignores AI_PROVIDER values that configure the diagram generator", () => {
@@ -425,6 +457,87 @@ async function collect(events: AsyncIterable<AskStreamEvent>) {
   for await (const event of events) list.push(event);
   return list;
 }
+
+describe("ThoughtFilter", () => {
+  it("removes inline reasoning, including tags split across chunks", () => {
+    expect(stripThoughts("<thought>plan it</thought>OK")).toBe("OK");
+    expect(stripThoughts("No thoughts here.")).toBe("No thoughts here.");
+    const filter = new ThoughtFilter();
+    const out = [
+      "<tho",
+      "ught>secret plan",
+      "</tho",
+      "ught>\n\nThe ",
+      "answer <b>",
+    ]
+      .map((chunk) => filter.push(chunk))
+      .join("");
+    expect(out + filter.flush()).toBe("The answer <b>");
+    const orphan = new ThoughtFilter();
+    expect(
+      orphan.push("</thou") +
+        orphan.push("ght>An order is saved") +
+        orphan.flush(),
+    ).toBe("An order is saved");
+  });
+});
+
+describe("FallbackProvider", () => {
+  const ok = (model: string, text = model): AiProvider => ({
+    id: "gemma",
+    model,
+    complete: async () => text,
+    async *stream() {
+      yield text;
+    },
+  });
+  const failing = (model: string, afterChunk = false): AiProvider => ({
+    id: "gemma",
+    model,
+    complete: async () => {
+      throw new AiProviderError("out of credits", 402);
+    },
+    async *stream() {
+      if (afterChunk) yield "partial";
+      throw new AiProviderError("out of credits", 402);
+    },
+  });
+
+  it("uses the backup when the primary fails, and reports which model answered", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const provider = new FallbackProvider(failing("hf"), ok("google"));
+    expect(await provider.complete({ messages: [] })).toBe("google");
+    expect(provider.model).toBe("google");
+    let text = "";
+    for await (const chunk of provider.stream({ messages: [] })) text += chunk;
+    expect(text).toBe("google");
+  });
+
+  it("keeps the primary when it works", async () => {
+    const provider = new FallbackProvider(ok("hf"), ok("google"));
+    expect(await provider.complete({ messages: [] })).toBe("hf");
+    expect(provider.model).toBe("hf");
+  });
+
+  it("never restarts a stream that already produced text, or after an abort", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const provider = new FallbackProvider(failing("hf", true), ok("google"));
+    const chunks: string[] = [];
+    await expect(async () => {
+      for await (const chunk of provider.stream({ messages: [] }))
+        chunks.push(chunk);
+    }).rejects.toThrow(/out of credits/);
+    expect(chunks).toEqual(["partial"]);
+    const controller = new AbortController();
+    controller.abort();
+    await expect(
+      new FallbackProvider(failing("hf"), ok("google")).complete({
+        messages: [],
+        signal: controller.signal,
+      }),
+    ).rejects.toThrow(/out of credits/);
+  });
+});
 
 describe("GitBrief", () => {
   it("explains a node from its context, keeps only verifiable citations, and caches", async () => {

@@ -72,7 +72,9 @@ function redactRequest<T extends AiRequest>(request: T): T {
 export function withRedaction(provider: AiProvider): AiProvider {
   const wrapped: AiProvider = {
     id: provider.id,
-    model: provider.model,
+    get model() {
+      return provider.model;
+    },
     complete: (request) => provider.complete(redactRequest(request)),
     stream: (request) => provider.stream(redactRequest(request)),
   };

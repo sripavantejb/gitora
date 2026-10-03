@@ -7,6 +7,7 @@ import {
   type EndpointOptions,
 } from "./http";
 import { readSseData } from "./sse-lines";
+import { stripThoughts, ThoughtFilter } from "./thoughts";
 import {
   AiProviderError,
   AiToolsUnsupportedError,
@@ -27,7 +28,10 @@ interface ChatToolCall {
 interface ChatCompletionResponse {
   choices?: Array<{
     message?: { content?: string | null; tool_calls?: ChatToolCall[] };
-    delta?: { content?: string | null };
+    delta?: {
+      content?: string | null;
+      extra_content?: { google?: { thought?: boolean } };
+    };
     finish_reason?: string | null;
   }>;
   error?: { message?: string } | string;
@@ -45,6 +49,8 @@ export interface OpenAICompatibleConfig {
   timeoutMs?: number;
   maxRetries?: number;
   headers?: Record<string, string>;
+  /** Added to max_tokens for models whose hidden reasoning counts against it. */
+  reasoningTokens?: number;
 }
 
 /**
@@ -87,7 +93,9 @@ export class OpenAICompatibleProvider implements AiProvider {
           model: this.model,
           messages: request.messages,
           temperature: request.temperature ?? 0.2,
-          max_tokens: request.maxOutputTokens ?? 2048,
+          max_tokens:
+            (request.maxOutputTokens ?? 2048) +
+            (this.config.reasoningTokens ?? 0),
           ...extra,
         }),
       },
@@ -158,7 +166,7 @@ export class OpenAICompatibleProvider implements AiProvider {
     try {
       if (!response.ok) throw await this.failure(response);
       const body = (await response.json()) as ChatCompletionResponse;
-      return body.choices?.[0]?.message?.content ?? "";
+      return stripThoughts(body.choices?.[0]?.message?.content ?? "");
     } finally {
       done();
     }
@@ -199,7 +207,7 @@ export class OpenAICompatibleProvider implements AiProvider {
       );
       return calls.length
         ? { kind: "tool_calls", calls }
-        : { kind: "text", text: message?.content ?? "" };
+        : { kind: "text", text: stripThoughts(message?.content ?? "") };
     } finally {
       done();
     }
@@ -208,11 +216,12 @@ export class OpenAICompatibleProvider implements AiProvider {
   async *stream(request: AiRequest): AsyncIterable<string> {
     const timed = await this.send(request, { stream: true });
     const { response, touch, done, timedOut } = timed;
+    const thoughts = new ThoughtFilter();
     try {
       if (!response.ok || !response.body) throw await this.failure(response);
       for await (const data of readSseData(response.body)) {
         touch();
-        if (data === "[DONE]") return;
+        if (data === "[DONE]") break;
         let chunk: ChatCompletionResponse;
         try {
           chunk = JSON.parse(data) as ChatCompletionResponse;
@@ -223,9 +232,13 @@ export class OpenAICompatibleProvider implements AiProvider {
           throw new AiProviderError(
             `${this.options.label} stopped while answering.`,
           );
-        const text = chunk.choices?.[0]?.delta?.content;
+        const delta = chunk.choices?.[0]?.delta;
+        if (delta?.extra_content?.google?.thought) continue;
+        const text = delta?.content ? thoughts.push(delta.content) : "";
         if (text) yield text;
       }
+      const rest = thoughts.flush();
+      if (rest) yield rest;
     } catch (error) {
       if (timedOut())
         throw new AiProviderError(
