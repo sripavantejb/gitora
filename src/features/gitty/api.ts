@@ -78,6 +78,16 @@ export const fetchImpact = (repo: RepoRef, nodeId: string, signal?: AbortSignal)
 export const fetchTrace = (repo: RepoRef, feature: string, signal?: AbortSignal) =>
   post<{ trace: TraceResult }>("/api/gitty/trace", { ...repo, feature }, signal);
 
+export interface Brief {
+  brief: string;
+  sources: SourceRef[];
+  rejected: string[];
+  model: string;
+}
+
+export const fetchBrief = (repo: RepoRef, nodeId: string, signal?: AbortSignal) =>
+  post<Brief>("/api/gitty/brief", { ...repo, nodeId }, signal);
+
 export const fetchLearn = (repo: RepoRef, signal?: AbortSignal) =>
   post<{ learn: LearnResult }>("/api/gitty/learn", repo, signal);
 

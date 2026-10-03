@@ -4,6 +4,7 @@ import type { AiStatus } from "~/features/gitty/types";
 
 import { GemmaProvider } from "./gemma";
 import { isLocalEndpoint } from "./http";
+import { DEFAULT_HF_GEMMA_MODEL, HuggingFaceProvider } from "./huggingface";
 import { OpenAICompatibleProvider } from "./openai-compatible";
 import { withRedaction } from "./redact";
 import { AiNotConfiguredError, type AiProvider } from "./types";
@@ -43,8 +44,8 @@ function providerId(env: Env): ProviderId {
 export interface ResolvedAiConfig {
   id: ProviderId;
   model: string;
-  /** "google": Google AI Studio's native API. "openai": any /chat/completions endpoint. */
-  style: "google" | "openai";
+  /** "google": Google AI Studio's native API. "openai": any /chat/completions endpoint. "huggingface": HF Inference Providers. */
+  style: "google" | "openai" | "huggingface";
   baseUrl?: string;
   apiKey?: string;
   timeoutMs: number;
@@ -78,22 +79,33 @@ export function resolveAiConfig(env: Env = process.env): ResolvedAiConfig {
 
   switch (id) {
     case "gemma": {
-      const model = read(env, "GEMMA_MODEL") ?? DEFAULT_GEMMA_MODEL;
       const baseUrl = read(env, "GEMMA_BASE_URL");
+      const hfToken = read(env, "HF_TOKEN");
       const apiKey = read(env, "GEMMA_API_KEY") ?? read(env, "GOOGLE_API_KEY") ?? read(env, "GEMINI_API_KEY");
       const explicit = read(env, "GEMMA_API_STYLE")?.toLowerCase();
-      const style: "google" | "openai" =
-        explicit === "google" || explicit === "openai"
+      const style: ResolvedAiConfig["style"] =
+        explicit === "google" || explicit === "openai" || explicit === "huggingface"
           ? explicit
           : baseUrl && !/generativelanguage\.googleapis\.com(?!.*\/openai)/.test(baseUrl)
             ? "openai"
-            : "google";
+            : hfToken && !baseUrl
+              ? "huggingface"
+              : "google";
+      if (style === "huggingface")
+        return {
+          ...base,
+          style,
+          model: read(env, "HF_GEMMA_MODEL") ?? DEFAULT_HF_GEMMA_MODEL,
+          apiKey: hfToken,
+          problem: hfToken ? undefined : "Set HF_TOKEN to use Gemma on Hugging Face.",
+        };
+      const model = read(env, "GEMMA_MODEL") ?? DEFAULT_GEMMA_MODEL;
       const problem =
         (baseUrl ? checkBaseUrl(env, "GEMMA_BASE_URL", baseUrl) : undefined) ??
         (style === "openai" && !baseUrl
           ? "Set GEMMA_BASE_URL to your Gemma inference endpoint (an OpenAI-compatible /v1 URL)."
           : style === "google" && !apiKey
-            ? "Set GEMMA_BASE_URL to your Gemma inference endpoint, or GEMMA_API_KEY to use Google AI Studio."
+            ? "Set GEMMA_BASE_URL to your Gemma inference endpoint, HF_TOKEN for Hugging Face, or GEMMA_API_KEY for Google AI Studio."
             : undefined);
       return { ...base, model, style, baseUrl, apiKey, problem };
     }
@@ -146,7 +158,9 @@ export function getAiProvider(): AiProvider {
   if (config.problem) throw new AiNotConfiguredError(`AI is not configured. ${config.problem}`);
   const limits = { timeoutMs: config.timeoutMs, maxRetries: config.maxRetries };
   const provider: AiProvider =
-    config.style === "google"
+    config.style === "huggingface"
+      ? new HuggingFaceProvider(config.apiKey!, config.model, limits)
+      : config.style === "google"
       ? new GemmaProvider(config.apiKey!, config.model, config.baseUrl, limits)
       : new OpenAICompatibleProvider({
           id: config.id,

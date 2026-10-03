@@ -5,6 +5,7 @@ vi.mock("server-only", () => ({}));
 import type { AskStreamEvent } from "~/features/gitty/types";
 
 import { MALFORMED_ARGUMENTS, parseToolArguments, runAgent } from "../agent";
+import { runBrief } from "../brief";
 import { SHOP_FILES, fixtureRepository } from "../test-fixture";
 import { toolSpecs } from "../tools";
 import { backoffDelay, isLocalEndpoint, postWithRetry } from "./http";
@@ -59,6 +60,16 @@ describe("resolveAiConfig", () => {
     expect(resolveAiConfig({ GEMMA_BASE_URL: "ftp://host/v1" }).problem).toMatch(/http/);
     const config = resolveAiConfig({ GEMMA_BASE_URL: "https://h/v1", GEMMA_TIMEOUT_MS: "1", GEMMA_MAX_RETRIES: "99" });
     expect(config).toMatchObject({ timeoutMs: 5_000, maxRetries: 5 });
+  });
+
+  it("uses Gemma on Hugging Face when only HF_TOKEN is set", () => {
+    expect(resolveAiConfig({ HF_TOKEN: "hf_x" })).toMatchObject({
+      style: "huggingface",
+      model: "google/gemma-4-31B-it",
+      problem: undefined,
+    });
+    expect(resolveAiConfig({ HF_TOKEN: "hf_x", HF_GEMMA_MODEL: "google/gemma-4-26B-A4B-it" }).model).toBe("google/gemma-4-26B-A4B-it");
+    expect(resolveAiConfig({ HF_TOKEN: "hf_x", GEMMA_BASE_URL: "https://h/v1" }).style).toBe("openai");
   });
 
   it("keeps Google's native API for a googleapis base URL unless it is the /openai one", () => {
@@ -265,6 +276,23 @@ async function collect(events: AsyncIterable<AskStreamEvent>) {
   for await (const event of events) list.push(event);
   return list;
 }
+
+describe("GitBrief", () => {
+  it("explains a node from its context, keeps only verifiable citations, and caches", async () => {
+    const loaded = fixtureRepository(SHOP_FILES);
+    const node = loaded.graph.nodes.find((entry) => entry.id === "file:src/server/db.ts")!;
+    const complete = vi.fn(async (request: AiRequest) => {
+      expect(request.messages[1]!.content).toContain("src/server/db.ts");
+      return "Creates the database client [[src/server/db.ts:1-3]] used by [[src/made/up.ts:1]].";
+    });
+    const provider: AiProvider = { id: "gemma", model: "brief-test", complete, async *stream() {} };
+    const result = await runBrief(loaded, node, provider);
+    expect(result.sources.map((source) => source.path)).toEqual(["src/server/db.ts"]);
+    expect(result.rejected).toEqual(["[[src/made/up.ts:1]]"]);
+    await runBrief(loaded, node, provider);
+    expect(complete).toHaveBeenCalledTimes(1);
+  });
+});
 
 describe("agent tool calling", () => {
   const loaded = fixtureRepository(SHOP_FILES);

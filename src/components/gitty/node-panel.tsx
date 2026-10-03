@@ -27,6 +27,7 @@ import { ancestorsOf } from "~/features/gitty/map-layout";
 import type { AiStatus, CodeNode, ImpactResult, SourceRef } from "~/features/gitty/types";
 import { cn } from "~/lib/utils";
 
+import { GitBriefPanel } from "./gitbrief-panel";
 import { NODE_FILL, NODE_ICONS, NODE_TYPE_LABEL } from "./node-style";
 
 export type NodeAction = "explain" | "ask" | "trace" | "why" | "impact" | "source";
@@ -205,7 +206,10 @@ export function NodePanel({
 
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         {view === "overview" && (
-          <Overview node={node} childNodes={children} onSelect={onSelect} />
+          <>
+            <GitBriefPanel repoRef={repoRef} node={node} ai={ai} onOpenSource={onOpenSource} />
+            <Overview node={node} childNodes={children} onSelect={onSelect} />
+          </>
         )}
         {view !== "overview" && loading && (
           <div className="space-y-2" aria-busy>
