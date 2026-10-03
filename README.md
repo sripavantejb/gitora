@@ -2,7 +2,7 @@
 
 Understand any GitHub repository: generate an interactive architecture diagram, explore a navigable map of its code, and ask an AI guide questions that are answered with real citations into the source.
 
-Gitora is built on [GitDiagram](https://github.com/ahmedkhaleel2004/gitdiagram) and adds **Gitty**, a codebase explorer powered by Gemma.
+Gitora is built on GitDiagram and adds **Gitty**, a codebase explorer powered by Gemma.
 
 **[Try it locally →](http://localhost:3000/)** · Open any repository at `localhost:3000/owner/repo`, or its explorer at `localhost:3000/owner/repo/explore`.
 
@@ -115,4 +115,4 @@ More detail:
 
 Contributions are welcome. Open an issue or pull request with a focused description and [verification notes](docs/dev-setup.md#verify).
 
-Based on [GitDiagram](https://github.com/ahmedkhaleel2004/gitdiagram) by Ahmed Khaleel, inspired by [Romain Courtois](https://github.com/cyclotruc)'s [Gitingest](https://gitingest.com/).
+Maintained by [sripavantejb](https://github.com/sripavantejb).
