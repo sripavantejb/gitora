@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import type { AskStreamEvent } from "~/features/gitty/types";
 import { runAgent } from "~/server/gitty/agent";
-import { getAiProvider } from "~/server/gitty/ai/provider";
+import { getAiProvider, requiresNativeTools } from "~/server/gitty/ai/provider";
 import { getImpact, nodeById } from "~/server/gitty/graph-queries";
 import {
   admitGittyRequest,
@@ -75,6 +75,7 @@ export async function POST(request: Request) {
           impact: mode === "impact" && node ? getImpact(loaded, node) : undefined,
           history,
           signal: request.signal,
+          nativeToolsOnly: requiresNativeTools(),
         }))
           send(event);
       } catch (error) {

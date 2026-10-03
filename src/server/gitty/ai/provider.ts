@@ -3,116 +3,166 @@ import "server-only";
 import type { AiStatus } from "~/features/gitty/types";
 
 import { GemmaProvider } from "./gemma";
+import { isLocalEndpoint } from "./http";
 import { OpenAICompatibleProvider } from "./openai-compatible";
+import { withRedaction } from "./redact";
 import { AiNotConfiguredError, type AiProvider } from "./types";
 
 export const DEFAULT_GEMMA_MODEL = "gemma-4-26b-a4b";
 
 type ProviderId = "gemma" | "openai" | "openrouter" | "openai-compatible";
+type ToolCalling = "auto" | "native" | "json";
 
-function env(name: string): string | undefined {
-  const value = process.env[name]?.trim();
+type Env = Record<string, string | undefined>;
+
+function read(env: Env, name: string): string | undefined {
+  const value = env[name]?.trim();
   return value ? value : undefined;
 }
 
+function int(env: Env, name: string, fallback: number, min: number, max: number): number {
+  const value = Number(read(env, name));
+  return Number.isFinite(value) ? Math.min(max, Math.max(min, Math.round(value))) : fallback;
+}
+
 /**
- * Gitty's provider: GITTY_AI_PROVIDER, else Gemma. AI_PROVIDER also selects
- * the diagram generator (openai | openrouter), so it only counts here when it
- * says "gemma" (which the generator treats as its OpenAI default).
+ * Gitty's provider: GITTY_AI_PROVIDER, else AI_PROVIDER when it names a Gitty
+ * provider (gemma | openai-compatible), else Gemma. AI_PROVIDER=openai or
+ * openrouter configures the diagram generator, so Gitty ignores those values
+ * unless GITTY_AI_PROVIDER repeats them.
  */
-function providerId(): ProviderId {
-  const configured = env("GITTY_AI_PROVIDER")?.toLowerCase();
-  if (
-    configured === "openai" ||
-    configured === "openrouter" ||
-    configured === "openai-compatible"
-  )
-    return configured;
+function providerId(env: Env): ProviderId {
+  const gitty = read(env, "GITTY_AI_PROVIDER")?.toLowerCase();
+  if (gitty === "openai" || gitty === "openrouter" || gitty === "openai-compatible" || gitty === "gemma")
+    return gitty;
+  const shared = read(env, "AI_PROVIDER")?.toLowerCase();
+  if (shared === "openai-compatible") return shared;
   return "gemma";
 }
 
-function describe(): { id: ProviderId; model: string; missing?: string } {
-  const id = providerId();
+export interface ResolvedAiConfig {
+  id: ProviderId;
+  model: string;
+  /** "google": Google AI Studio's native API. "openai": any /chat/completions endpoint. */
+  style: "google" | "openai";
+  baseUrl?: string;
+  apiKey?: string;
+  timeoutMs: number;
+  maxRetries: number;
+  toolCalling: ToolCalling;
+  /** Why AI can't run, in words an operator can act on. */
+  problem?: string;
+}
+
+function checkBaseUrl(env: Env, name: string, baseUrl: string): string | undefined {
+  let url: URL;
+  try {
+    url = new URL(baseUrl);
+  } catch {
+    return `${name} is not a valid URL.`;
+  }
+  if (url.protocol !== "https:" && url.protocol !== "http:") return `${name} must be an http(s) URL.`;
+  if (url.username || url.password) return `${name} must not contain credentials; use the API key variable instead.`;
+  if (read(env, "VERCEL") && isLocalEndpoint(baseUrl))
+    return `${name} points to a local address (${url.host}), which a Vercel deployment can't reach. Set it to your production inference endpoint.`;
+  return undefined;
+}
+
+export function resolveAiConfig(env: Env = process.env): ResolvedAiConfig {
+  const id = providerId(env);
+  const timeoutMs = int(env, id === "gemma" ? "GEMMA_TIMEOUT_MS" : "GITTY_AI_TIMEOUT_MS", 60_000, 5_000, 300_000);
+  const maxRetries = int(env, id === "gemma" ? "GEMMA_MAX_RETRIES" : "GITTY_AI_MAX_RETRIES", 2, 0, 5);
+  const toolSetting = read(env, id === "gemma" ? "GEMMA_TOOL_CALLING" : "GITTY_AI_TOOL_CALLING")?.toLowerCase();
+  const toolCalling: ToolCalling = toolSetting === "native" || toolSetting === "json" ? toolSetting : "auto";
+  const base = { id, timeoutMs, maxRetries, toolCalling };
+
   switch (id) {
-    case "gemma":
-      return {
-        id,
-        model: env("GEMMA_MODEL") ?? DEFAULT_GEMMA_MODEL,
-        missing:
-          env("GEMMA_API_KEY") ?? env("GOOGLE_API_KEY") ?? env("GEMINI_API_KEY")
-            ? undefined
-            : "GEMMA_API_KEY",
-      };
+    case "gemma": {
+      const model = read(env, "GEMMA_MODEL") ?? DEFAULT_GEMMA_MODEL;
+      const baseUrl = read(env, "GEMMA_BASE_URL");
+      const apiKey = read(env, "GEMMA_API_KEY") ?? read(env, "GOOGLE_API_KEY") ?? read(env, "GEMINI_API_KEY");
+      const explicit = read(env, "GEMMA_API_STYLE")?.toLowerCase();
+      const style: "google" | "openai" =
+        explicit === "google" || explicit === "openai"
+          ? explicit
+          : baseUrl && !/generativelanguage\.googleapis\.com(?!.*\/openai)/.test(baseUrl)
+            ? "openai"
+            : "google";
+      const problem =
+        (baseUrl ? checkBaseUrl(env, "GEMMA_BASE_URL", baseUrl) : undefined) ??
+        (style === "openai" && !baseUrl
+          ? "Set GEMMA_BASE_URL to your Gemma inference endpoint (an OpenAI-compatible /v1 URL)."
+          : style === "google" && !apiKey
+            ? "Set GEMMA_BASE_URL to your Gemma inference endpoint, or GEMMA_API_KEY to use Google AI Studio."
+            : undefined);
+      return { ...base, model, style, baseUrl, apiKey, problem };
+    }
     case "openai":
       return {
-        id,
-        model: env("GITTY_MODEL") ?? "gpt-4.1-mini",
-        missing: env("OPENAI_API_KEY") ? undefined : "OPENAI_API_KEY",
+        ...base,
+        style: "openai",
+        model: read(env, "GITTY_MODEL") ?? "gpt-4.1-mini",
+        baseUrl: "https://api.openai.com/v1",
+        apiKey: read(env, "OPENAI_API_KEY"),
+        problem: read(env, "OPENAI_API_KEY") ? undefined : "Set OPENAI_API_KEY to enable Gitty's AI features.",
       };
     case "openrouter":
       return {
-        id,
-        model: env("GITTY_MODEL") ?? "google/gemma-4-26b-a4b-it",
-        missing: env("OPENROUTER_API_KEY") ? undefined : "OPENROUTER_API_KEY",
+        ...base,
+        style: "openai",
+        model: read(env, "GITTY_MODEL") ?? "google/gemma-4-26b-a4b-it",
+        baseUrl: "https://openrouter.ai/api/v1",
+        apiKey: read(env, "OPENROUTER_API_KEY"),
+        problem: read(env, "OPENROUTER_API_KEY") ? undefined : "Set OPENROUTER_API_KEY to enable Gitty's AI features.",
       };
-    case "openai-compatible":
+    case "openai-compatible": {
+      const baseUrl = read(env, "GITTY_AI_BASE_URL");
+      const model = read(env, "GITTY_MODEL") ?? "";
       return {
-        id,
-        model: env("GITTY_MODEL") ?? "",
-        missing: !env("GITTY_AI_BASE_URL")
-          ? "GITTY_AI_BASE_URL"
-          : !env("GITTY_MODEL")
-            ? "GITTY_MODEL"
-            : undefined,
+        ...base,
+        style: "openai",
+        model,
+        baseUrl,
+        apiKey: read(env, "GITTY_AI_API_KEY"),
+        problem: !baseUrl
+          ? "Set GITTY_AI_BASE_URL to enable Gitty's AI features."
+          : (checkBaseUrl(env, "GITTY_AI_BASE_URL", baseUrl) ??
+            (!model ? "Set GITTY_MODEL to enable Gitty's AI features." : undefined)),
       };
+    }
   }
 }
 
 export function getAiStatus(): AiStatus {
-  const { id, model, missing } = describe();
-  return missing
-    ? {
-        configured: false,
-        provider: id,
-        model,
-        reason: `Set ${missing} to enable Gitty's AI features.`,
-      }
+  const { id, model, problem } = resolveAiConfig();
+  return problem
+    ? { configured: false, provider: id, model, reason: problem }
     : { configured: true, provider: id, model };
 }
 
+/** The configured provider, server-side only, with outgoing messages scrubbed of secrets. */
 export function getAiProvider(): AiProvider {
-  const { id, model, missing } = describe();
-  if (missing)
-    throw new AiNotConfiguredError(
-      `AI is not configured. Set ${missing} to enable Gitty's AI features.`,
-    );
-  switch (id) {
-    case "gemma":
-      return new GemmaProvider(
-        (env("GEMMA_API_KEY") ?? env("GOOGLE_API_KEY") ?? env("GEMINI_API_KEY"))!,
-        model,
-        env("GEMMA_BASE_URL"),
-      );
-    case "openai":
-      return new OpenAICompatibleProvider(
-        id,
-        env("OPENAI_API_KEY")!,
-        model,
-        "https://api.openai.com/v1",
-      );
-    case "openrouter":
-      return new OpenAICompatibleProvider(
-        id,
-        env("OPENROUTER_API_KEY")!,
-        model,
-        "https://openrouter.ai/api/v1",
-      );
-    case "openai-compatible":
-      return new OpenAICompatibleProvider(
-        id,
-        env("GITTY_AI_API_KEY") ?? "",
-        model,
-        env("GITTY_AI_BASE_URL")!,
-      );
-  }
+  const config = resolveAiConfig();
+  if (config.problem) throw new AiNotConfiguredError(`AI is not configured. ${config.problem}`);
+  const limits = { timeoutMs: config.timeoutMs, maxRetries: config.maxRetries };
+  const provider: AiProvider =
+    config.style === "google"
+      ? new GemmaProvider(config.apiKey!, config.model, config.baseUrl, limits)
+      : new OpenAICompatibleProvider({
+          id: config.id,
+          label: config.id === "gemma" ? "Gemma" : config.id === "openrouter" ? "OpenRouter" : config.id === "openai" ? "OpenAI" : "The AI endpoint",
+          model: config.model,
+          baseUrl: config.baseUrl!,
+          apiKey: config.apiKey,
+          ...limits,
+          ...(config.id === "openrouter" ? { headers: { "X-Title": "Gitty" } } : {}),
+        });
+  const safe = withRedaction(provider);
+  if (config.toolCalling === "json") delete safe.completeWithTools;
+  return safe;
+}
+
+/** Whether the agent must use native tool calls (no JSON fallback). */
+export function requiresNativeTools(): boolean {
+  return resolveAiConfig().toolCalling === "native";
 }

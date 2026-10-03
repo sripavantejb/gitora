@@ -6,12 +6,12 @@ import type {
   ImpactResult,
 } from "~/features/gitty/types";
 
-import type { AiMessage, AiProvider } from "./ai/types";
+import { AiToolsUnsupportedError, type AiMessage, type AiProvider } from "./ai/types";
 import { validateCitations } from "./citations";
 import { buildNodeContext, repositoryStructure } from "./context";
 import { parseModelJson } from "./model-json";
 import type { LoadedRepository } from "./repository";
-import { executeToolCall, toolCatalog } from "./tools";
+import { executeToolCall, toolCatalog, toolSpecs } from "./tools";
 import { NO_EVIDENCE_MESSAGE } from "./trace";
 
 export const MAX_TOOL_ROUNDS = 4;
@@ -107,6 +107,27 @@ export function parseDecision(reply: string): Decision {
   return { kind: "malformed" };
 }
 
+/** Endpoints (per instance) that rejected the `tools` parameter; they use the JSON protocol. */
+const NATIVE_TOOLS_UNSUPPORTED = new Set<string>();
+
+export const MALFORMED_ARGUMENTS = Symbol("malformed-arguments");
+
+export function parseToolArguments(raw: string): unknown {
+  if (!raw.trim()) return {};
+  try {
+    const value: unknown = JSON.parse(raw);
+    return value && typeof value === "object" && !Array.isArray(value) ? value : MALFORMED_ARGUMENTS;
+  } catch {
+    return MALFORMED_ARGUMENTS;
+  }
+}
+
+/** A native-tools reply without tool calls: some servers put a JSON request in the text instead. */
+export function decisionFromText(text: string): Decision {
+  const decision = parseDecision(text);
+  return decision.kind === "calls" ? decision : { kind: "ready" };
+}
+
 function summarizeArgs(args: unknown): string {
   if (!args || typeof args !== "object") return "";
   return Object.values(args as Record<string, unknown>)
@@ -124,6 +145,8 @@ export interface AgentRequest {
   impact?: ImpactResult;
   history: ChatTurn[];
   signal?: AbortSignal;
+  /** Fail instead of falling back to the JSON protocol when native tool calls are rejected. */
+  nativeToolsOnly?: boolean;
 }
 
 export async function* runAgent(request: AgentRequest): AsyncGenerator<AskStreamEvent> {
@@ -156,24 +179,61 @@ export async function* runAgent(request: AgentRequest): AsyncGenerator<AskStream
           : "Give an overview of this repository.");
   const focus = node ? `The user selected ${node.type} ${node.label} (node_id ${node.id}).` : "The user is asking about the whole repository.";
 
-  // Research: the model asks for tools; the application runs them.
+  // Research: the model asks for tools; the application validates and runs them.
+  const toolsKey = `${provider.id}:${provider.model}`;
+  let native = Boolean(provider.completeWithTools) && !NATIVE_TOOLS_UNSUPPORTED.has(toolsKey);
   let malformed = 0;
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
     signal?.throwIfAborted();
-    const reply = await provider.complete({
-      messages: [
-        { role: "system", content: RULES },
-        ...history,
-        {
-          role: "user",
-          content: `${focus}\nQuestion: ${question}\n\nEVIDENCE SO FAR${evidence.text}\n\nTOOLS (read-only, run by Gitty)\n${toolCatalog()}\n\nDecide whether you need more evidence. Reply with JSON only, no prose:\n- {"tool": "<name>", "arguments": {...}} to request one tool, or {"calls": [ ... up to ${MAX_CALLS_PER_ROUND} ... ]} for several\n- {"ready": true} if the evidence is enough (or nothing more would help).`,
-        },
-      ],
-      temperature: 0,
-      maxOutputTokens: 400,
-      signal,
-    });
-    const decision = parseDecision(reply);
+    let decision: Decision;
+    if (native) {
+      try {
+        const turn = await provider.completeWithTools!({
+          messages: [
+            { role: "system", content: RULES },
+            ...history,
+            {
+              role: "user",
+              content: `${focus}\nQuestion: ${question}\n\nEVIDENCE SO FAR${evidence.text}\n\nIf you need more evidence, call Gitty's read-only tools (up to ${MAX_CALLS_PER_ROUND} calls). If the evidence is enough, or nothing more would help, reply with the single word READY.`,
+            },
+          ],
+          tools: toolSpecs(),
+          temperature: 0,
+          maxOutputTokens: 600,
+          signal,
+        });
+        decision =
+          turn.kind === "tool_calls"
+            ? {
+                kind: "calls",
+                calls: turn.calls
+                  .slice(0, MAX_CALLS_PER_ROUND)
+                  .map((call) => ({ tool: call.name, arguments: parseToolArguments(call.arguments) })),
+              }
+            : decisionFromText(turn.text);
+      } catch (error) {
+        if (!(error instanceof AiToolsUnsupportedError) || request.nativeToolsOnly) throw error;
+        NATIVE_TOOLS_UNSUPPORTED.add(toolsKey);
+        native = false;
+        round--;
+        continue;
+      }
+    } else {
+      const reply = await provider.complete({
+        messages: [
+          { role: "system", content: RULES },
+          ...history,
+          {
+            role: "user",
+            content: `${focus}\nQuestion: ${question}\n\nEVIDENCE SO FAR${evidence.text}\n\nTOOLS (read-only, run by Gitty)\n${toolCatalog()}\n\nDecide whether you need more evidence. Reply with JSON only, no prose:\n- {"tool": "<name>", "arguments": {...}} to request one tool, or {"calls": [ ... up to ${MAX_CALLS_PER_ROUND} ... ]} for several\n- {"ready": true} if the evidence is enough (or nothing more would help).`,
+          },
+        ],
+        temperature: 0,
+        maxOutputTokens: 400,
+        signal,
+      });
+      decision = parseDecision(reply);
+    }
     if (decision.kind === "ready") break;
     if (decision.kind === "malformed") {
       malformed++;
@@ -186,6 +246,11 @@ export async function* runAgent(request: AgentRequest): AsyncGenerator<AskStream
     }
     for (const call of decision.calls) {
       const name = typeof call.tool === "string" ? call.tool : "?";
+      if (call.arguments === MALFORMED_ARGUMENTS) {
+        malformed++;
+        addEvidence(evidence, `TOOL ${name} FAILED: the arguments were not valid JSON.`, []);
+        continue;
+      }
       yield { type: "tool", name, summary: summarizeArgs(call.arguments) };
       const result = await executeToolCall(loaded, call.tool, call.arguments, signal);
       const added = result.ok

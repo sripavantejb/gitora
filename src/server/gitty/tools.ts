@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import type { CodeNode, SourceRef } from "~/features/gitty/types";
 
+import type { AiToolSpec } from "./ai/types";
 import { symbolNameOf } from "./analysis/build-graph";
 import { buildNodeContext, repositoryStructure } from "./context";
 import {
@@ -282,6 +283,18 @@ export function toolCatalog(): string {
   return TOOLS.map(
     (tool) => `- ${tool.name} ${tool.signature}: ${tool.description}`,
   ).join("\n");
+}
+
+/** The tools as JSON Schema function definitions, for endpoints with native tool calling. */
+export function toolSpecs(): AiToolSpec[] {
+  return TOOLS.map((tool) => {
+    const parameters = z.toJSONSchema(tool.schema, {
+      io: "input",
+      unrepresentable: "any",
+    }) as Record<string, unknown>;
+    delete parameters.$schema;
+    return { name: tool.name, description: tool.description, parameters };
+  });
 }
 
 export type ToolCallResult =
