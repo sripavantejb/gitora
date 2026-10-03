@@ -21,6 +21,25 @@ function hasProviderKey(): boolean {
   return Boolean(process.env[keyName]?.trim());
 }
 
+const DIAGRAM_STORAGE_ENV = [
+  "R2_ACCOUNT_ID",
+  "R2_ACCESS_KEY_ID",
+  "R2_SECRET_ACCESS_KEY",
+  "R2_PUBLIC_BUCKET",
+  "R2_PRIVATE_BUCKET",
+  "UPSTASH_REDIS_REST_URL",
+  "UPSTASH_REDIS_REST_TOKEN",
+  "CACHE_KEY_SECRET",
+] as const;
+
+/** Whether the diagram generator has its storage and model credentials. */
+export function isDiagramGeneratorConfigured(): boolean {
+  return (
+    hasProviderKey() &&
+    DIAGRAM_STORAGE_ENV.every((name) => Boolean(process.env[name]?.trim()))
+  );
+}
+
 export async function checkReadiness(): Promise<ReadinessResult> {
   let publicBucket = "";
   let privateBucket = "";

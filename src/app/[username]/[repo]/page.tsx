@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { permanentRedirect } from "next/navigation";
+import { permanentRedirect, redirect } from "next/navigation";
+import { isDiagramGeneratorConfigured } from "~/server/readiness";
 import { isPlaceholderRepo } from "~/lib/placeholder-repo";
 import { JsonLd } from "~/components/json-ld";
 import { RepositoryReadout } from "~/components/generation/repository-readout";
@@ -85,6 +86,8 @@ export default async function Repo({ params }: RepoPageProps) {
   if (isPlaceholderRepo(username, repo)) {
     return <PlaceholderRepo username={username} repo={repo} />;
   }
+  if (!isDiagramGeneratorConfigured())
+    redirect(`${getRepoPagePath(username, repo)}/explore`);
   // Without a stored state (none yet, or R2 failed) the client loads the
   // diagram itself, as it does for a new repo.
   const { state } = await readPublicDiagramState(username, repo);

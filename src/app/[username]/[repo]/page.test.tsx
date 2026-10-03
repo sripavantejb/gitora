@@ -25,7 +25,10 @@ vi.mock("next/cache", () => ({
       return read();
     },
 }));
-vi.mock("next/navigation", () => ({ permanentRedirect }));
+vi.mock("next/navigation", () => ({ permanentRedirect, redirect: vi.fn() }));
+vi.mock("~/server/readiness", () => ({
+  isDiagramGeneratorConfigured: () => true,
+}));
 vi.mock("~/server/storage/artifact-store", () => ({ getStoredDiagramState }));
 vi.mock("./repo-page-client", () => ({ default: () => null }));
 

@@ -16,7 +16,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 
 import { GittyApiError, fetchGraph, type RepoRef } from "~/features/gitty/api";
 import { ancestorsOf, indexChildren, layoutMap } from "~/features/gitty/map-layout";
-import type { GraphResponse, SourceRef, TraceResult } from "~/features/gitty/types";
+import type { CodeNodeType, GraphResponse, SourceRef, TraceResult } from "~/features/gitty/types";
 import { cn } from "~/lib/utils";
 
 import { AskPanel, type AskRequest } from "./ask-panel";
@@ -44,6 +44,9 @@ const TABS: Array<{ id: Tab; label: string; icon: typeof Network }> = [
   { id: "learn", label: "Teach me", icon: GraduationCap },
 ];
 
+const isContainer = (type: CodeNodeType) =>
+  type === "REPOSITORY" || type === "APPLICATION" || type === "MODULE" || type === "DIRECTORY";
+
 function initialExpanded(graph: GraphResponse["graph"]): Set<string> {
   const expanded = new Set(["repo"]);
   const top = graph.nodes.filter((node) => node.parentId === "repo" && node.type !== "FILE");
@@ -52,10 +55,25 @@ function initialExpanded(graph: GraphResponse["graph"]): Set<string> {
       expanded.add(node.id);
   if (expanded.size === 1 && top.length <= 3)
     for (const node of top) expanded.add(node.id);
+  // Open single-folder chains (src -> pkg) so the first view shows real files.
+  const children = new Map<string, string[]>();
+  for (const node of graph.nodes)
+    if (node.parentId) children.set(node.parentId, [...(children.get(node.parentId) ?? []), node.id]);
+  for (const id of [...expanded]) {
+    let current = children.get(id) ?? [];
+    while (current.length === 1 && !current[0]!.startsWith("file:") && expanded.size < 24) {
+      expanded.add(current[0]!);
+      current = children.get(current[0]!) ?? [];
+    }
+  }
   return expanded;
 }
 
-export default function ExploreClient({ owner, repo }: RepoRef) {
+export default function ExploreClient({
+  owner,
+  repo,
+  diagramsEnabled = true,
+}: RepoRef & { diagramsEnabled?: boolean }) {
   const repoRef = useMemo(() => ({ owner, repo }), [owner, repo]);
   const [data, setData] = useState<GraphResponse | null>(null);
   const [error, setError] = useState<{ message: string; code?: string } | null>(null);
@@ -73,6 +91,7 @@ export default function ExploreClient({ owner, repo }: RepoRef) {
   const [source, setSource] = useState<SourceRef | null>(null);
   const [commandOpen, setCommandOpen] = useState(false);
   const [pendingFocus, setPendingFocus] = useState<string | null>(null);
+  const [pendingFit, setPendingFit] = useState<string[] | null>(null);
   const mapRef = useRef<MapHandle>(null);
   const nonce = useRef(0);
 
@@ -134,6 +153,12 @@ export default function ExploreClient({ owner, repo }: RepoRef) {
     setPendingFocus(null);
   }, [pendingFocus, layout]);
 
+  useEffect(() => {
+    if (!pendingFit) return;
+    mapRef.current?.fitTo(pendingFit);
+    setPendingFit(null);
+  }, [pendingFit, layout]);
+
   const reveal = useCallback(
     (id: string, expandSelf = false) => {
       setExpanded((current) => {
@@ -160,8 +185,9 @@ export default function ExploreClient({ owner, repo }: RepoRef) {
 
   const selectNode = useCallback(
     (id: string, options: { focus?: boolean; expand?: boolean } = {}) => {
-      if (!index.byId.has(id)) return;
-      reveal(id, options.expand ?? false);
+      const node = index.byId.get(id);
+      if (!node) return;
+      reveal(id, (options.expand ?? false) && isContainer(node.type));
       setSelectedId(id);
       setHighlight({ dependencies: [], dependents: [] });
       if (options.focus !== false) setPendingFocus(id);
@@ -175,7 +201,7 @@ export default function ExploreClient({ owner, repo }: RepoRef) {
       if (!node) return;
       setSelectedId(id);
       setHighlight({ dependencies: [], dependents: [] });
-      if (node.type !== "REPOSITORY" && index.children.has(id))
+      if (isContainer(node.type) && node.type !== "REPOSITORY" && index.children.has(id))
         setExpanded((current) => (current.has(id) ? current : new Set(current).add(id)));
       setTab((current) => (current === "learn" || current === "trace" ? current : "node"));
     },
@@ -232,11 +258,24 @@ export default function ExploreClient({ owner, repo }: RepoRef) {
     }
   };
 
+  const onHighlight = useCallback(
+    (next: Highlight) => {
+      setHighlight(next);
+      const related = [...next.dependencies, ...next.dependents];
+      if (!related.length) return;
+      if (related.length <= 12) for (const id of related) reveal(id);
+      setPendingFit(selectedId ? [selectedId, ...related] : related);
+    },
+    [reveal, selectedId],
+  );
+
   const onTrace = (result: TraceResult | null) => {
     setTrace(result);
     setActiveStep(null);
-    if (result)
-      for (const step of result.steps) reveal(step.nodeId);
+    setHighlight({ dependencies: [], dependents: [] });
+    if (!result) return;
+    for (const step of result.steps) reveal(step.nodeId);
+    setPendingFit(result.steps.map((step) => step.nodeId));
   };
 
   const onStep = (stepIndex: number) => {
@@ -250,7 +289,7 @@ export default function ExploreClient({ owner, repo }: RepoRef) {
 
   if (error)
     return (
-      <Shell repoRef={repoRef}>
+      <Shell repoRef={repoRef} diagramsEnabled={diagramsEnabled}>
         <div className="flex flex-1 items-center justify-center p-6">
           <div className="neo-panel max-w-lg p-6">
             <AlertTriangle className="h-8 w-8 text-orange" aria-hidden />
@@ -283,7 +322,7 @@ export default function ExploreClient({ owner, repo }: RepoRef) {
 
   if (loading || !data)
     return (
-      <Shell repoRef={repoRef}>
+      <Shell repoRef={repoRef} diagramsEnabled={diagramsEnabled}>
         <div className="relative flex flex-1 items-center justify-center overflow-hidden gitty-map">
           <div className="absolute inset-0 opacity-60" aria-hidden>
             {Array.from({ length: 9 }, (_, row) => (
@@ -315,6 +354,7 @@ export default function ExploreClient({ owner, repo }: RepoRef) {
   return (
     <Shell
       repoRef={repoRef}
+      diagramsEnabled={diagramsEnabled}
       stats={
         <div className="hidden items-center gap-1.5 text-[11px] font-semibold lg:flex">
           <span className="border-2 border-ink bg-white px-1.5 py-0.5">{graph.stats.files} files</span>
@@ -415,7 +455,7 @@ export default function ExploreClient({ owner, repo }: RepoRef) {
                   onAction={onAction}
                   onSelect={(id) => selectNode(id)}
                   onOpenSource={openSource}
-                  onHighlight={setHighlight}
+                  onHighlight={onHighlight}
                 />
               )}
             </div>
@@ -457,11 +497,13 @@ export default function ExploreClient({ owner, repo }: RepoRef) {
 
 function Shell({
   repoRef,
+  diagramsEnabled,
   stats,
   actions,
   children,
 }: {
   repoRef: RepoRef;
+  diagramsEnabled: boolean;
   stats?: ReactNode;
   actions?: ReactNode;
   children: ReactNode;
@@ -471,11 +513,12 @@ function Shell({
       <div className="mx-auto flex h-[calc(100dvh-7rem)] min-h-[640px] max-w-[1800px] flex-col overflow-hidden border-[3px] border-ink bg-paper shadow-[8px_8px_0_0_#0a0a0a] max-lg:h-auto">
         <div className="flex items-center gap-3 border-b-[3px] border-ink bg-white px-3 py-2">
           <Link
-            href={`/${repoRef.owner}/${repoRef.repo}`}
+            href={diagramsEnabled ? `/${repoRef.owner}/${repoRef.repo}` : "/"}
             className="flex items-center gap-1 border-2 border-ink px-2 py-1 text-[11px] font-semibold hover:bg-lime"
-            title="Back to the diagram"
+            title={diagramsEnabled ? "Back to the diagram" : "Explore another repository"}
           >
-            <ArrowLeft className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Diagram</span>
+            <ArrowLeft className="h-3.5 w-3.5" />{" "}
+            <span className="hidden sm:inline">{diagramsEnabled ? "Diagram" : "Home"}</span>
           </Link>
           <div className="flex min-w-0 items-center gap-2">
             <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border-2 border-ink bg-lime font-archivo text-[11px]">G</span>

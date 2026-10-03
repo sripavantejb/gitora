@@ -18,6 +18,9 @@ const APP_MANIFEST =
   /^(?:package\.json|go\.mod|Cargo\.toml|pyproject\.toml|setup\.py|pom\.xml|build\.gradle(?:\.kts)?|composer\.json|Gemfile|mix\.exs)$/;
 const APP_ROOTS = /^(?:apps?|services|cmd|web|frontend|backend|server|client|api)$/i;
 const MODULE_ROOTS = /^(?:packages|libs?|crates|modules|internal|pkg)$/i;
+/** Folders whose manifests describe samples or tooling, not the product. */
+const NON_PRODUCT =
+  /^(?:examples?|samples?|demos?|tests?|__tests__|e2e|fixtures?|docs?|benchmarks?|scripts|tools|templates)$/i;
 const ENTRY_NAME =
   /^(?:main|index|app|server|cli|__main__|manage|wsgi|asgi|program|lib|mod)\.[^/]+$/i;
 
@@ -151,6 +154,7 @@ export function buildCodebaseGraph(input: BuildGraphInput): BuiltGraph {
   const directoryType = (path: string): CodeNode["type"] => {
     const segments = path.split("/");
     const root = segments[0]!;
+    if (segments.some((segment) => NON_PRODUCT.test(segment))) return "DIRECTORY";
     if (segments.length === 2 && APP_ROOTS.test(root)) return "APPLICATION";
     if (segments.length === 2 && MODULE_ROOTS.test(root)) return "MODULE";
     if (manifestDirectories.has(path))
@@ -268,10 +272,13 @@ export function buildCodebaseGraph(input: BuildGraphInput): BuiltGraph {
   }
 
   const importedBy = new Map<string, number>();
+  const importsOut = new Map<string, number>();
   for (const edge of edges)
-    if (edge.kind === "imports")
+    if (edge.kind === "imports") {
       importedBy.set(edge.to, (importedBy.get(edge.to) ?? 0) + 1);
-  const entryPoints = shownFiles
+      importsOut.set(edge.from, (importsOut.get(edge.from) ?? 0) + 1);
+    }
+  const conventional = shownFiles
     .filter(
       (path) =>
         ENTRY_NAME.test(baseName(path)) ||
@@ -288,6 +295,19 @@ export function buildCodebaseGraph(input: BuildGraphInput): BuiltGraph {
     )
     .slice(0, 6)
     .map(fileId);
+  // Libraries have no main file: start from the files that import the most.
+  const entryPoints = conventional.length
+    ? conventional
+    : [...input.texts.keys()]
+        .map(fileId)
+        .filter((id) => nodes.has(id) && (importsOut.get(id) ?? 0) > 0)
+        .sort(
+          (a, b) =>
+            (importsOut.get(b) ?? 0) - (importsOut.get(a) ?? 0) ||
+            a.split("/").length - b.split("/").length ||
+            (a < b ? -1 : 1),
+        )
+        .slice(0, 3);
 
   return {
     analyses,

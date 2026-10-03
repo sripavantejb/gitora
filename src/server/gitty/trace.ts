@@ -36,6 +36,14 @@ const STOPWORDS = new Set(
   ),
 );
 
+const LAYER_LABEL: Record<Layer, string> = {
+  ui: "UI",
+  route: "Route / handler",
+  service: "Service",
+  data: "Data access",
+  other: "",
+};
+
 const LAYER_ORDER: Record<Layer, number> = {
   ui: 0,
   route: 1,
@@ -171,9 +179,11 @@ function graphTrace(feature: string, candidates: TraceCandidate[], note?: string
     nodeId: candidate.nodeId,
     label: candidate.path.split("/").at(-1) ?? candidate.path,
     path: candidate.path,
-    explanation: candidate.matched.length
-      ? `${candidate.layer.toUpperCase()} layer · mentions ${candidate.matched.map((token) => `“${token}”`).join(", ")}`
-      : `${candidate.layer.toUpperCase()} layer · imported by an earlier step and talks to a database`,
+    explanation: `${candidate.layer === "other" ? "" : `${LAYER_LABEL[candidate.layer]} · `}${
+      candidate.matched.length
+        ? `mentions ${candidate.matched.map((token) => `“${token}”`).join(", ")}`
+        : "imported by an earlier step and talks to a database"
+    }`,
     source: { path: candidate.path, startLine: candidate.line, endLine: candidate.line },
     verifiedLink: linked(list[index - 1], candidate),
   }));

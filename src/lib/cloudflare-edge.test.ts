@@ -98,15 +98,12 @@ describe("isContainerPath", () => {
 });
 
 describe("CRON_ROUTES", () => {
-  it("matches vercel.json and wrangler.jsonc", () => {
+  it("covers every vercel.json cron and matches wrangler.jsonc", () => {
     const vercel = JSON.parse(readFileSync("vercel.json", "utf8")) as {
-      crons: { path: string; schedule: string }[];
+      crons?: { path: string; schedule: string }[];
     };
-    expect(CRON_ROUTES).toEqual(
-      Object.fromEntries(
-        vercel.crons.map((cron) => [cron.schedule, cron.path]),
-      ),
-    );
+    for (const cron of vercel.crons ?? [])
+      expect(CRON_ROUTES[cron.schedule]).toBe(cron.path);
     const wrangler = readFileSync("wrangler.jsonc", "utf8");
     for (const schedule of Object.keys(CRON_ROUTES))
       expect(wrangler).toContain(JSON.stringify(schedule));

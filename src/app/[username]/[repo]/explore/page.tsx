@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import ExploreClient from "~/components/gitty/explore-client";
+import { isDiagramGeneratorConfigured } from "~/server/readiness";
+
+export const dynamic = "force-dynamic";
 
 type ExplorePageProps = {
   params: Promise<{ username: string; repo: string }>;
@@ -22,5 +25,7 @@ export async function generateMetadata({ params }: ExplorePageProps): Promise<Me
 export default async function ExplorePage({ params }: ExplorePageProps) {
   const { username, repo } = await params;
   if (!OWNER.test(username) || !REPO.test(repo)) notFound();
-  return <ExploreClient owner={username} repo={repo} />;
+  return (
+    <ExploreClient owner={username} repo={repo} diagramsEnabled={isDiagramGeneratorConfigured()} />
+  );
 }

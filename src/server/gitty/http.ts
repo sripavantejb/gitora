@@ -21,6 +21,7 @@ import {
 } from "~/server/http/same-origin-json";
 
 import { AiNotConfiguredError, AiProviderError } from "./ai/types";
+import { consumeLocalRateLimit } from "./local-rate-limit";
 
 export const repositorySchema = {
   owner: z.string().regex(/^[A-Za-z0-9-_]{1,100}$/),
@@ -31,13 +32,21 @@ export const nodeIdSchema = z.string().min(1).max(700);
 
 const MAX_BODY_BYTES = 64_000;
 
-function gittyRateLimit(request: Request) {
+async function gittyRateLimit(request: Request) {
+  const max = readEnvInt("GITTY_RATE_LIMIT_MAX", 120);
+  const windowSeconds = readEnvInt("GITTY_RATE_LIMIT_WINDOW_SECONDS", 600);
+  if (!process.env.UPSTASH_REDIS_REST_URL?.trim() || !process.env.UPSTASH_REDIS_REST_TOKEN?.trim()) {
+    const clientIp = getClientIp(request);
+    return clientIp
+      ? consumeLocalRateLimit(toRateLimitBucket(clientIp), max, windowSeconds)
+      : { allowed: true, retryAfterSeconds: 0 };
+  }
   return consumeRateLimit({
     clientIp: getClientIp(request),
     buildKey: (clientIp, windowStartSeconds) =>
       `ratelimit:v2:gitty:${encodeURIComponent(toRateLimitBucket(clientIp))}:${windowStartSeconds}`,
-    max: readEnvInt("GITTY_RATE_LIMIT_MAX", 120),
-    windowSeconds: readEnvInt("GITTY_RATE_LIMIT_WINDOW_SECONDS", 600),
+    max,
+    windowSeconds,
     unavailableEvent: "gitty.rate_limit.unavailable",
   });
 }

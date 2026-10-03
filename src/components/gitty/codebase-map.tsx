@@ -26,6 +26,8 @@ import { NODE_FILL, NODE_ICONS, NODE_TYPE_LABEL } from "./node-style";
 export interface MapHandle {
   focus(id: string): void;
   fit(): void;
+  /** Frame these nodes (or their visible ancestors). */
+  fitTo(ids: string[]): void;
 }
 
 interface CodebaseMapProps {
@@ -130,7 +132,29 @@ function CodebaseMapInner({
     [byId, layout],
   );
 
-  useImperativeHandle(handleRef, () => ({ focus, fit }), [focus, fit]);
+  const fitTo = useCallback(
+    (ids: string[]) => {
+      const element = containerRef.current;
+      const targets = ids
+        .map((id) => byId.get(layout.visibleFor(id) ?? id))
+        .filter((node): node is LaidOutNode => Boolean(node));
+      if (!element || !targets.length) return;
+      const minX = Math.min(...targets.map((node) => node.x));
+      const minY = Math.min(...targets.map((node) => node.y));
+      const maxX = Math.max(...targets.map((node) => node.x + NODE_WIDTH));
+      const maxY = Math.max(...targets.map((node) => node.y + NODE_HEIGHT));
+      const { width, height } = element.getBoundingClientRect();
+      const k = Math.min(1.1, Math.max(MIN_SCALE, Math.min((width - 120) / (maxX - minX), (height - 120) / (maxY - minY))));
+      setView({
+        k,
+        x: width / 2 - ((minX + maxX) / 2) * k,
+        y: height / 2 - ((minY + maxY) / 2) * k,
+      });
+    },
+    [byId, layout],
+  );
+
+  useImperativeHandle(handleRef, () => ({ focus, fit, fitTo }), [focus, fit, fitTo]);
 
   const fitted = useRef(false);
   useEffect(() => {
