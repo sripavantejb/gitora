@@ -129,7 +129,7 @@ export const AudiencePanels = memo(function AudiencePanels({
     () =>
       tally(
         people,
-        (v) => (!v.ref || /gitdiagram\.com$/.test(v.ref) ? "Direct" : v.ref),
+        (v) => (!v.ref || /^localhost(:3000)?$/.test(v.ref) ? "Direct" : v.ref),
         6,
       ),
     [people],

@@ -20,7 +20,7 @@ Visualize any codebase: turn any public or private GitHub repository into an int
 
 GitDiagram can now turn a repository into a narrated video of about a minute. The video starts with what the project is for and what people do with it, then shows briefly how its main parts fit together and one decision under the hood.
 
-[![Watch GitDiagram explain itself in a minute](./docs/readme_video.jpg)](http://localhost:3000/sripavantejb/gitdiagram/video)
+[![Watch GitDiagram explain itself in a minute](./docs/readme_video.jpg)](http://localhost:3000/sripavantejb/gitora/video)
 
 - **[Watch the gallery →](http://localhost:3000/videos)** or add `/video` to any diagram URL, such as `localhost:3000/owner/repo/video`.
 - **Download an MP4** in landscape or vertical (9:16), with captions burned in.
@@ -45,7 +45,7 @@ GitDiagram is a remote MCP server at `http://localhost:3000/mcp` (no key or sign
 
 ```bash
 # Claude Code: the plugin adds the MCP server and a /gitdiagram skill
-claude plugin marketplace add sripavantejb/gitdiagram
+claude plugin marketplace add sripavantejb/gitora
 claude plugin install gitdiagram@gitdiagram
 # ...or just the MCP server
 claude mcp add --transport http gitdiagram http://localhost:3000/mcp
@@ -54,7 +54,7 @@ claude mcp add --transport http gitdiagram http://localhost:3000/mcp
 codex mcp add gitdiagram --url http://localhost:3000/mcp
 
 # Gemini CLI
-gemini extensions install https://github.com/sripavantejb/gitdiagram
+gemini extensions install https://github.com/sripavantejb/gitora
 
 # GitHub Copilot CLI
 copilot mcp add --transport http gitdiagram http://localhost:3000/mcp
@@ -67,7 +67,7 @@ In other clients (ChatGPT, Windsurf, Zed, LM Studio, Goose and more), add a remo
 Requires [Bun](https://bun.sh/), Cloudflare R2, Upstash Redis, and an OpenAI or OpenRouter API key. See the [setup guide](docs/dev-setup.md) for prerequisites and configuration.
 
 ```bash
-git clone https://github.com/sripavantejb/gitdiagram.git
+git clone https://github.com/sripavantejb/gitora.git
 cd gitdiagram
 bun install
 cp .env.example .env

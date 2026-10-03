@@ -1,10 +1,10 @@
 {
-  "repository": "sripavantejb/gitdiagram",
+  "repository": "sripavantejb/gitora",
   "createdAt": "2026-09-25T07:18:29.003Z",
   "meta": {
     "owner": "sripavantejb",
-    "repo": "gitdiagram",
-    "url": "https://github.com/sripavantejb/gitdiagram",
+    "repo": "gitora",
+    "url": "https://github.com/sripavantejb/gitora",
     "description": "Free, simple, fast interactive diagrams and explainer videos for any GitHub repository",
     "stars": 17079,
     "language": "TypeScript"
@@ -405,7 +405,7 @@
             "y": 1.3,
             "w": 13.6,
             "h": 7.1,
-            "url": "github.com/sripavantejb/gitdiagram"
+            "url": "github.com/sripavantejb/gitora"
           },
           {
             "id": "ft",
@@ -494,7 +494,7 @@
             "do": "replace",
             "at": "diagram",
             "target": ["win"],
-            "text": "localhost:3000/sripavantejb/gitdiagram"
+            "text": "localhost:3000/sripavantejb/gitora"
           },
           {
             "do": "pulse",

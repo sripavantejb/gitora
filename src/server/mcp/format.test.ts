@@ -20,9 +20,9 @@ describe("parseRepositoryInput", () => {
       "next.js",
     ],
     [
-      "github.com/sripavantejb/gitdiagram",
+      "github.com/sripavantejb/gitora",
       "sripavantejb",
-      "gitdiagram",
+      "gitora",
     ],
     ["www.github.com/a/b?tab=readme", "a", "b"],
     ["git@github.com:facebook/react.git", "facebook", "react"],

@@ -23,13 +23,13 @@ export interface RepositoryRef {
  */
 export function parseRepositoryInput(input: string): RepositoryRef | null {
   const trimmed = input.trim().replace(/^@/, "");
-  const withScheme = /^(?:www\.)?(?:github\.com|gitdiagram\.com)\//i.test(
+  const withScheme = /^(?:www\.)?(?:github\.com|localhost:3000)\//i.test(
     trimmed,
   )
     ? `https://${trimmed}`
     : trimmed;
   const onGitHub = withScheme.replace(
-    /^https?:\/\/(?:www\.)?gitdiagram\.com\//i,
+    /^https?:\/\/localhost:3000\//i,
     "https://github.com/",
   );
   const parsed = parseGitHubRepoUrl(onGitHub);

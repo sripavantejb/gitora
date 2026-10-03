@@ -9,7 +9,7 @@ interface GitHubRepoResponse {
 }
 
 const GITHUB_REPO_URL =
-  "https://api.github.com/repos/sripavantejb/gitdiagram";
+  "https://api.github.com/repos/sripavantejb/gitora";
 // The header shows this on every page, and a page's cache lifetime is the
 // shortest revalidate read while rendering it: at five minutes this capped
 // every page (repository pages are meant to keep six hours) and made the

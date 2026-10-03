@@ -142,7 +142,7 @@ async function refreshRecentStats() {
 
 async function refreshGitHubStars() {
   const response = await fetch(
-    "https://api.github.com/repos/sripavantejb/gitdiagram",
+    "https://api.github.com/repos/sripavantejb/gitora",
     {
       headers: await getGitHubApiHeaders(),
       cache: "no-store",

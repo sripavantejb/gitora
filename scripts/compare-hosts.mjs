@@ -24,7 +24,7 @@ const only = option("only", "");
 const jsonPath = option("json", "");
 const verbose = args.includes("--verbose");
 
-const REPO = "/sripavantejb/gitdiagram";
+const REPO = "/sripavantejb/gitora";
 const BROWSER =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36";
 
@@ -49,7 +49,7 @@ const REQUESTS = [
   // Redirects
   { path: "/sponsor", body: "none" },
   { path: "/watch", body: "none" },
-  { path: "/sripavantejb/GitDiagram?utm_source=x", body: "none" },
+  { path: "/sripavantejb/gitora?utm_source=x", body: "none" },
   { path: `${REPO}/tree/main/src`, body: "none" },
   { path: `${REPO}/twitter-image`, body: "none" },
   { path: "/out/sent", body: "none" },
@@ -94,7 +94,7 @@ const REQUESTS = [
   { path: "/api/sponsor", body: "json", jsonIgnore: ["*"] },
   { path: "/api/analytics-context", body: "json" },
   {
-    path: "/api/video?username=sripavantejb&repo=gitdiagram",
+    path: "/api/video?username=sripavantejb&repo=gitora",
     body: "json",
   },
   {
@@ -104,12 +104,12 @@ const REQUESTS = [
   },
   { path: "/api/video/catalog", body: "json", jsonIgnore: ["*"] },
   {
-    path: "/api/video/file?username=sripavantejb&repo=gitdiagram&format=poster",
+    path: "/api/video/file?username=sripavantejb&repo=gitora&format=poster",
     body: "size",
   },
   { path: "/api/browse-index", body: "size" },
   {
-    path: "/api/diagram-preview?username=sripavantejb&repo=gitdiagram",
+    path: "/api/diagram-preview?username=sripavantejb&repo=gitora",
     body: "json",
     jsonIgnore: ["*"],
   },

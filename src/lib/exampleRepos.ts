@@ -1,6 +1,6 @@
 export const exampleRepos = {
   FastAPI: "/fastapi/fastapi",
-  GitDiagram: "/sripavantejb/gitdiagram",
+  GitDiagram: "/sripavantejb/gitora",
   Flask: "/pallets/flask",
   Monkeytype: "/monkeytypegame/monkeytype",
 };

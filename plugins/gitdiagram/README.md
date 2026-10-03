@@ -7,7 +7,7 @@
 In Claude Code:
 
 ```bash
-claude plugin marketplace add sripavantejb/gitdiagram
+claude plugin marketplace add sripavantejb/gitora
 claude plugin install gitdiagram@gitdiagram
 ```
 

@@ -9,7 +9,7 @@
     "url": "http://localhost:3000"
   },
   "homepage": "http://localhost:3000",
-  "repository": "https://github.com/sripavantejb/gitdiagram",
+  "repository": "https://github.com/sripavantejb/gitora",
   "license": "MIT",
   "keywords": [
     "architecture",
@@ -22,5 +22,5 @@
   ],
   "privacyPolicyUrl": "http://localhost:3000/privacy",
   "supportUrl": "mailto:sripavantejb@example.com",
-  "documentationUrl": "https://github.com/sripavantejb/gitdiagram#use-gitdiagram-from-ai-agents"
+  "documentationUrl": "https://github.com/sripavantejb/gitora#use-gitdiagram-from-ai-agents"
 }

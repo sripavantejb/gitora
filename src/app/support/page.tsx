@@ -13,7 +13,7 @@ const sections: TextPageSection[] = [
   {
     heading: "Contact",
     body: [
-      "Email sripavantejb@example.com with the repository and what went wrong; you'll get an answer from the person who builds GitDiagram. Bugs and feature requests are also welcome as issues at github.com/sripavantejb/gitdiagram.",
+      "Email sripavantejb@example.com with the repository and what went wrong; you'll get an answer from the person who builds GitDiagram. Bugs and feature requests are also welcome as issues at github.com/sripavantejb/gitora.",
     ],
   },
   {

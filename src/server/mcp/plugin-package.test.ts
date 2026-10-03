@@ -64,7 +64,7 @@ describe("the OpenAI plugin package", () => {
       "privacyPolicyURL",
       "termsOfServiceURL",
     ])
-      expect(listing[key]).toMatch(/^https:\/\/gitdiagram\.com(\/|$)/);
+      expect(listing[key]).toMatch(/^http:\/\/localhost:3000(\/|$)/);
     for (const page of ["support", "privacy", "terms"])
       expect(existsSync(join(process.cwd(), `src/app/${page}/page.tsx`))).toBe(
         true,

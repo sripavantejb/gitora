@@ -49,14 +49,14 @@ const ZONE = "4709d18806151b68cbbba34ddac80252";
 // does (so its copies in the location caches are usually gone).
 const URLS = [
   { name: "home", path: "/" },
-  { name: "repo", path: "/sripavantejb/gitdiagram" },
+  { name: "repo", path: "/sripavantejb/gitora" },
   { name: "tail", path: "/sindresorhus/yocto-spinner" },
   { name: "videos", path: "/videos" },
-  { name: "watch", path: "/sripavantejb/gitdiagram/video" },
-  { name: "og", path: "/sripavantejb/gitdiagram/opengraph-image" },
+  { name: "watch", path: "/sripavantejb/gitora/video" },
+  { name: "og", path: "/sripavantejb/gitora/opengraph-image" },
   {
     name: "api-video",
-    path: "/api/video?username=sripavantejb&repo=gitdiagram",
+    path: "/api/video?username=sripavantejb&repo=gitora",
   },
   { name: "api-catalog", path: "/api/video/catalog" },
   { name: "api-health", path: "/api/healthz" },
