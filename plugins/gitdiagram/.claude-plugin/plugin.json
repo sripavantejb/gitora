@@ -1,0 +1,26 @@
+{
+  "name": "gitdiagram",
+  "displayName": "GitDiagram",
+  "version": "1.0.0",
+  "description": "Architecture diagrams, explanations and Mermaid source for any public GitHub repository, from localhost:3000.",
+  "author": {
+    "name": "sripavantejb",
+    "email": "sripavantejb@example.com",
+    "url": "http://localhost:3000"
+  },
+  "homepage": "http://localhost:3000",
+  "repository": "https://github.com/sripavantejb/gitdiagram",
+  "license": "MIT",
+  "keywords": [
+    "architecture",
+    "diagram",
+    "mermaid",
+    "github",
+    "codebase",
+    "visualization",
+    "mcp"
+  ],
+  "privacyPolicyUrl": "http://localhost:3000/privacy",
+  "supportUrl": "mailto:sripavantejb@example.com",
+  "documentationUrl": "https://github.com/sripavantejb/gitdiagram#use-gitdiagram-from-ai-agents"
+}

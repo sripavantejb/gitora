@@ -1,0 +1,19 @@
+{
+  "name": "gitdiagram",
+  "version": "1.0.0",
+  "description": "Architecture diagrams, explanations and Mermaid source for any public GitHub repository, from localhost:3000.",
+  "author": {
+    "name": "sripavantejb",
+    "email": "sripavantejb@example.com"
+  },
+  "homepage": "http://localhost:3000",
+  "repository": "https://github.com/sripavantejb/gitdiagram",
+  "license": "MIT",
+  "keywords": ["architecture", "diagram", "mermaid", "github", "codebase"],
+  "logo": "assets/logo.png",
+  "mcpServers": {
+    "gitdiagram": {
+      "url": "http://localhost:3000/mcp"
+    }
+  }
+}
