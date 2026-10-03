@@ -1,10 +1,12 @@
-# GitDiagram
+# Gitora
 
-Visualize any codebase: turn any public or private GitHub repository into an interactive architecture diagram, or watch it explained in a one-minute narrated video. AI agents can use it too, through the [MCP server](#use-gitdiagram-from-ai-agents) or the Markdown version of any diagram (`localhost:3000/owner/repo.md`).
+Understand any GitHub repository: generate an interactive architecture diagram, explore a navigable map of its code, and ask an AI guide questions that are answered with real citations into the source.
 
-**[Try GitDiagram →](http://localhost:3000/)** · Or replace `hub` with `diagram` in any GitHub repository URL.
+Gitora is built on [GitDiagram](https://github.com/ahmedkhaleel2004/gitdiagram) and adds **Gitty**, a codebase explorer powered by Gemma.
 
-[![GitDiagram front page](./docs/readme_img.png)](http://localhost:3000/)
+**[Try it locally →](http://localhost:3000/)** · Open any repository at `localhost:3000/owner/repo`, or its explorer at `localhost:3000/owner/repo/explore`.
+
+[![Gitora front page](./docs/readme_img.png)](http://localhost:3000/)
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
@@ -16,64 +18,51 @@ Visualize any codebase: turn any public or private GitHub repository into an int
 
 <!-- sponsor:end -->
 
-## New: explainer videos
-
-GitDiagram can now turn a repository into a narrated video of about a minute. The video starts with what the project is for and what people do with it, then shows briefly how its main parts fit together and one decision under the hood.
-
-[![Watch GitDiagram explain itself in a minute](./docs/readme_video.jpg)](http://localhost:3000/sripavantejb/gitora/video)
-
-- **[Watch the gallery →](http://localhost:3000/videos)** or add `/video` to any diagram URL, such as `localhost:3000/owner/repo/video`.
-- **Download an MP4** in landscape or vertical (9:16), with captions burned in.
-- **Making new videos is in early access.** Anyone can watch videos that already exist.
-
 ## Features
 
-- **Watch a repository explained** in a narrated video, or press **Video** on any diagram page.
-- **Explore the architecture** with an AI-generated diagram and streamed explanation.
-- **Jump to the code** by clicking any component's linked file or directory.
-- **Use private repositories** with a GitHub token via **Private Repos** in the header.
-- **Export diagrams** as PNG or copy the Mermaid source.
+### Gitty: explore a codebase
 
-## Use GitDiagram from AI agents
+Open `/owner/repo/explore` to get:
 
-GitDiagram is a remote MCP server at `http://localhost:3000/mcp` (no key or sign-in). Agents can read a public repository's architecture explanation, components, connections and Mermaid source, search the stored diagrams, and get explainer videos.
+- **Codebase map**: files, symbols and services laid out as an interactive graph, built by static analysis (parsed declarations and resolved imports), not guessed by a model.
+- **Ask**: chat with Gitty about the repository. It gathers evidence with read-only tools (`read_file`, `find_symbol`, `find_references`, `get_dependents`, `get_callers`, `search_code`, `get_git_history`, `trace_feature` and more), then streams an answer with `[[path:line]]` citations. Citations to code the model was never shown are rejected.
+- **Explain, Why and Impact**: select any node to have it explained, see the evidence for why it exists, or see everything that depends on it before you change it. Dependents are computed deterministically from imports.
+- **GitBrief**: a short explanation of whatever you click on the map.
+- **Learn**: a suggested reading order through the repository (overview, entry points, core, edges).
+- **Trace**: follow a feature across layers. Candidate files and links come from the analysis; the model can only order and explain them.
+- **Source viewer and command search** to jump straight to any file or symbol.
 
-[![Add to Claude](https://img.shields.io/badge/Claude-Add_connector-D97757?style=flat-square&logo=claude&logoColor=white)](https://claude.ai/customize/connectors?modal=add-custom-connector&connectorName=GitDiagram&connectorUrl=https%3A%2F%2Flocalhost%3A3000%2Fmcp)
-[![Install in Cursor](https://img.shields.io/badge/Cursor-Install_Server-000000?style=flat-square&logo=cursor&logoColor=white)](https://cursor.com/link/mcp/install?name=gitdiagram&config=eyJ1cmwiOiJodHRwczovL2dpdGRpYWdyYW0uY29tL21jcCJ9)
-[![Install in VS Code](https://img.shields.io/badge/VS_Code-Install_Server-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=gitdiagram&config=%7B%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Flocalhost%3A3000%2Fmcp%22%7D)
-[![Install in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install_Server-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=gitdiagram&config=%7B%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Flocalhost%3A3000%2Fmcp%22%7D&quality=insiders)
+Gitty is read-only: it never runs commands, changes files, or sends secrets to the model (outgoing messages are redacted).
+
+### Architecture diagrams
+
+- **AI-generated diagram** of any public or private repository, with a streamed explanation.
+- **Jump to the code** by clicking a component's linked file or directory.
+- **Private repositories** with a GitHub token via **Private Repos** in the header.
+- **Export** as PNG or copy the Mermaid source.
+- **Explainer videos** (optional, feature-flagged): a narrated one-minute walkthrough of a repository.
+
+### For AI agents
+
+A read-only MCP server at `http://localhost:3000/mcp` exposes stored diagrams (explanation, components, connections, Mermaid source), and every diagram has a Markdown version at `localhost:3000/owner/repo.md`.
 
 ```bash
-# Claude Code: the plugin adds the MCP server and a /gitdiagram skill
-claude plugin marketplace add sripavantejb/gitora
-claude plugin install gitdiagram@gitdiagram
-# ...or just the MCP server
 claude mcp add --transport http gitdiagram http://localhost:3000/mcp
-
-# Codex
 codex mcp add gitdiagram --url http://localhost:3000/mcp
-
-# Gemini CLI
-gemini extensions install https://github.com/sripavantejb/gitora
-
-# GitHub Copilot CLI
-copilot mcp add --transport http gitdiagram http://localhost:3000/mcp
 ```
-
-In other clients (ChatGPT, Windsurf, Zed, LM Studio, Goose and more), add a remote MCP server with the URL `http://localhost:3000/mcp`. Then ask something like "how is fastapi/fastapi structured?".
 
 ## Run locally
 
-Requires [Bun](https://bun.sh/), Cloudflare R2, Upstash Redis, and an OpenAI or OpenRouter API key. See the [setup guide](docs/dev-setup.md) for prerequisites and configuration.
+Requires [Bun](https://bun.sh/) 1.3.14 or later.
 
 ```bash
 git clone https://github.com/sripavantejb/gitora.git
-cd gitdiagram
+cd gitora
 bun install
 cp .env.example .env
 ```
 
-Fill in `.env` using the [configuration guide](docs/dev-setup.md#configure), then start the app:
+Configure what you want to use in `.env`, then start the app:
 
 ```bash
 bun run dev
@@ -81,11 +70,44 @@ bun run dev
 
 Open [localhost:3000](http://localhost:3000).
 
-Explainer videos are off by default. To turn them on, set `VIDEO_EXPLAINER_ENABLED=1`, `NEXT_PUBLIC_VIDEO_EXPLAINER=1`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` and `OPENROUTER_API_KEY` (for the voice) in `.env`. See `.env.example` for the other video settings.
+### Gitty only (quickest)
+
+Gitty needs just one AI provider. When the diagram generator is not configured, repository pages open the explorer automatically.
+
+| Option                         | Set in `.env`                                                       |
+| ------------------------------ | ------------------------------------------------------------------- |
+| Gemma on Hugging Face          | `HF_TOKEN` (optional `HF_GEMMA_MODEL`)                              |
+| Gemma on Google AI Studio      | `GEMMA_API_KEY`                                                     |
+| Your own Gemma server          | `GEMMA_BASE_URL` (an OpenAI-compatible `/v1` URL) and `GEMMA_MODEL` |
+| OpenAI, OpenRouter, or another | `GITTY_AI_PROVIDER` plus that provider's key and `GITTY_MODEL`      |
+
+If `GEMMA_API_KEY` is set alongside another Gemma provider, Google AI Studio is used as an automatic fallback (`GEMMA_FALLBACK=off` disables it). Set `GITHUB_PAT` to raise GitHub's API rate limits. See `.env.example` for timeouts, retries, tool-calling mode and rate limits.
+
+### Diagram generator
+
+The diagram generator additionally needs Cloudflare R2, Upstash Redis, `CACHE_KEY_SECRET`, and an OpenAI or OpenRouter API key. See the [setup guide](docs/dev-setup.md).
+
+Explainer videos are off by default. To turn them on, set `VIDEO_EXPLAINER_ENABLED=1`, `NEXT_PUBLIC_VIDEO_EXPLAINER=1`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` and `OPENROUTER_API_KEY` in `.env`.
 
 ## Development
 
-Built with Next.js, React, TypeScript, Tailwind CSS, and Mermaid. Videos use Claude or GPT for the script and scenes and OpenRouter (Gemini 3.8 Flash TTS) for the voice. Deployed on Vercel.
+Built with Next.js 16, React 19, TypeScript, Tailwind CSS and Mermaid.
+
+```bash
+bun run test        # vitest
+bun run check       # lint + typecheck
+bun run format:check
+bun run build
+```
+
+Project layout:
+
+- `src/app/` — pages and API routes (`api/gitty/*` for Gitty, `api/generate/*` for diagrams)
+- `src/server/gitty/` — repository loading, static analysis, the agent, tools and AI providers
+- `src/server/generate/` — the diagram generation pipeline
+- `src/components/gitty/` — the explorer UI
+
+More detail:
 
 - [Architecture](docs/architecture.md) — generation pipeline, storage, and API
 - [Development guide](docs/dev-setup.md) — setup, checks, and deployment
@@ -93,4 +115,4 @@ Built with Next.js, React, TypeScript, Tailwind CSS, and Mermaid. Videos use Cla
 
 Contributions are welcome. Open an issue or pull request with a focused description and [verification notes](docs/dev-setup.md#verify).
 
-Inspired by [Romain Courtois](https://github.com/cyclotruc)'s [Gitingest](https://gitingest.com/).
+Based on [GitDiagram](https://github.com/ahmedkhaleel2004/gitdiagram) by Ahmed Khaleel, inspired by [Romain Courtois](https://github.com/cyclotruc)'s [Gitingest](https://gitingest.com/).
