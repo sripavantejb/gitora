@@ -27,7 +27,7 @@ export function PlaceholderRepo({
       <div className="mx-auto mb-6 max-w-4xl pt-4 sm:mb-10 sm:pt-0 lg:mt-8">
         <h1 className="text-center text-[clamp(2rem,9vw,3rem)] leading-[1.05] font-bold tracking-tight text-balance sm:text-5xl">
           Swap{" "}
-          <span className="text-purple-600 dark:text-[hsl(var(--neo-button))]">
+          <span className="bg-lime px-1 text-ink">
             {typed}
           </span>{" "}
           for a real repository

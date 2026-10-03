@@ -222,6 +222,64 @@ async function readPublicSource(params: {
   };
 }
 
+/**
+ * One repository file's text, read and verified the same way as the excerpts.
+ * Null when it is not a readable text blob. `apiFallback: false` keeps public
+ * reads on the CDN so bulk reads never spend REST quota.
+ */
+export async function readRepositorySource(params: {
+  username: string;
+  repo: string;
+  githubData: GithubData;
+  path: string;
+  githubPat?: string;
+  signal?: AbortSignal;
+  apiFallback?: boolean;
+}): Promise<string | null> {
+  const blob = params.githubData.sourceBlobs?.get(params.path);
+  if (
+    !blob ||
+    blob.size > MAX_SOURCE_FILE_BYTES ||
+    !/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/.test(blob.sha)
+  )
+    return null;
+  const deadline = AbortSignal.timeout(15_000);
+  const signal = params.signal
+    ? AbortSignal.any([params.signal, deadline])
+    : deadline;
+  try {
+    if (!params.githubData.isPrivate) {
+      const source = await readPublicSource({
+        username: params.username,
+        repo: params.repo,
+        branch: params.githubData.defaultBranch,
+        path: params.path,
+        blob,
+        signal,
+      });
+      if (source && source !== "changed") return source.text;
+      if (params.apiFallback === false) return null;
+    }
+    const headers = await getGitHubApiHeaders({
+      githubPat: params.githubData.usedPublicFallback
+        ? undefined
+        : params.githubPat,
+    });
+    const source = await readBlob({
+      username: params.username,
+      repo: params.repo,
+      path: params.path,
+      blob,
+      headers,
+      signal,
+    });
+    return source?.text ?? null;
+  } catch {
+    params.signal?.throwIfAborted();
+    return null;
+  }
+}
+
 export async function fetchSourceContext(params: {
   username: string;
   repo: string;

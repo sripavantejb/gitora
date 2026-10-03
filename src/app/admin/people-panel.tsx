@@ -60,14 +60,14 @@ function Sparkline({ points }: { points: number[] }) {
       >
         <path
           d={`${line} L${width},${height} L0,${height} Z`}
-          className="fill-purple-500/15"
+          className="fill-lime/15"
         />
         <path
           d={line}
           fill="none"
           strokeWidth={2}
           vectorEffect="non-scaling-stroke"
-          className="stroke-purple-600 dark:stroke-purple-400"
+          className="stroke-lime dark:stroke-lime"
         />
         <line
           x1={x(shown)}

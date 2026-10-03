@@ -91,7 +91,7 @@ export function BrowseCatalogResults({
             <col className="w-[280px] xl:w-[304px]" />
           </colgroup>
           <thead className="hidden lg:table-header-group">
-            <tr className="border-b-[3px] border-black bg-[hsl(var(--neo-panel-muted))] text-left text-sm tracking-[0.16em] uppercase dark:border-[#0d0a19] dark:bg-[hsl(var(--neo-panel-muted))]">
+            <tr className="border-b-[3px] border-black bg-[hsl(var(--neo-panel-muted))] text-left text-sm tracking-[0.16em] uppercase dark:border-paper dark:bg-[hsl(var(--neo-panel-muted))]">
               <th className="px-5 py-4 font-semibold">Repository</th>
               <th className="hidden px-5 py-4 font-semibold lg:table-cell lg:w-[104px]">
                 Stars

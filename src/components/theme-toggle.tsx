@@ -14,7 +14,7 @@ export function ThemeToggle({ className, onToggle }: ThemeToggleProps) {
   const { resolvedTheme, setTheme } = useTheme();
   const mounted = useHydrated();
   const baseClassName =
-    "text-sm font-medium text-black transition-colors duration-150 hover:text-purple-600 dark:text-neutral-200 dark:hover:text-[hsl(var(--neo-link-hover))]";
+    "text-sm font-medium text-black transition-colors duration-150 hover:text-lime dark:text-neutral-200 dark:hover:text-[hsl(var(--neo-link-hover))]";
 
   if (!mounted) {
     return (

@@ -37,7 +37,7 @@ export function BrowseCatalogPagination({
           className={`inline-flex min-h-11 items-center justify-center rounded-md px-3 py-2 text-sm font-semibold lg:px-4 lg:py-2 lg:text-sm ${
             hasNextPage
               ? "neo-button"
-              : "cursor-not-allowed border-[3px] border-black bg-[hsl(var(--neo-button))] opacity-50 dark:border-[#1a0d30]"
+              : "cursor-not-allowed border-[3px] border-black bg-[hsl(var(--neo-button))] opacity-50 dark:border-paper"
           }`}
         >
           Next

@@ -86,8 +86,8 @@ export const LiveFeed = memo(function LiveFeed({
               onClick={() => setFilter(option.value)}
               className={`h-7 rounded-md border-2 border-black px-2.5 text-xs font-semibold text-[hsl(var(--foreground))] ${TOUCH} ${
                 filter === option.value
-                  ? "bg-purple-400 dark:bg-[hsl(var(--neo-button))] dark:text-black"
-                  : "bg-white hover:bg-purple-100 dark:bg-black/20 dark:hover:bg-black/30"
+                  ? "bg-lime dark:bg-[hsl(var(--neo-button))] dark:text-black"
+                  : "bg-white hover:bg-purple dark:bg-black/20 dark:hover:bg-black/30"
               }`}
             >
               {option.label}

@@ -2,7 +2,7 @@
   container-type: inline-size;
   display: block;
   border: 2px solid #000;
-  border-radius: 7px;
+  border-radius: 0;
   background: hsl(var(--neo-input-bg));
   color: hsl(var(--foreground));
   text-align: left;

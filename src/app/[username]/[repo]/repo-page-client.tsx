@@ -2,7 +2,8 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
-import { ExternalLink, Key, LockKeyhole } from "lucide-react";
+import Link from "next/link";
+import { ExternalLink, Key, LockKeyhole, Network } from "lucide-react";
 import { toast } from "sonner";
 import type { DiagramStateResponse } from "~/features/diagram/types";
 import { RepositoryWorkspace } from "~/components/generation/repository-workspace";
@@ -123,6 +124,20 @@ export default function RepoPageClient({
   return (
     <TooltipProvider delayDuration={500} skipDelayDuration={300}>
       <main>
+        <div className="mx-auto mt-4 flex max-w-6xl flex-wrap items-center justify-between gap-3 border-[3px] border-ink bg-lime px-4 py-2.5 shadow-[5px_5px_0_0_#0a0a0a] sm:mx-8 lg:mx-auto">
+          <p className="text-sm font-semibold text-ink">
+            <span className="font-archivo uppercase">Gitty</span> · Click
+            through this codebase, trace features and ask Gemma about any
+            file.
+          </p>
+          <Link
+            href={`/${repository}/explore`}
+            className="inline-flex items-center gap-1.5 border-2 border-ink bg-ink px-3 py-1.5 text-xs font-bold text-lime uppercase hover:bg-white hover:text-ink"
+          >
+            <Network className="h-3.5 w-3.5" aria-hidden="true" />
+            Explore with Gitty
+          </Link>
+        </div>
         <RepositoryWorkspace
           repository={repository}
           state={state}

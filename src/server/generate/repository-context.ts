@@ -26,6 +26,11 @@ const MANIFEST =
 const SENSITIVE =
   /(?:^|\/)(?:.*(?:secrets?|credentials?|passwords?|private[_-]?key).*|\.env.*|.*\.(?:pem|key|p12|pfx))$/i;
 
+/** Secrets, credentials and key material: never read or shown. */
+export function isSensitivePath(path: string): boolean {
+  return SENSITIVE.test(path);
+}
+
 export function isManifestPath(path: string): boolean {
   return MANIFEST.test(path);
 }

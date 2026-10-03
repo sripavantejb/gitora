@@ -64,6 +64,7 @@ export function CSPostHogProvider({ children }: { children: React.ReactNode }) {
     <ThemeProvider
       attribute="class"
       defaultTheme="light"
+      forcedTheme="light"
       enableSystem={false}
       storageKey="gitdiagram-theme"
     >

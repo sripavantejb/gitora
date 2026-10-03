@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import MainCard from "~/components/main-card";
 import Hero from "~/components/hero";
+import { HomeSections } from "~/components/home-sections";
 import { JsonLd } from "~/components/json-ld";
 import { NewBadge } from "~/components/new-badge";
 import { GITHUB_REPO_URL, SITE_URL } from "~/lib/site";
@@ -65,15 +66,13 @@ const applicationJsonLd = {
 
 export default function HomePage() {
   return (
-    // Clipped sideways at the screen's edge: the banner's glow reaches past it
-    // on narrow phones and would otherwise let the page scroll sideways.
-    <main className="flex min-h-[calc(100svh-9.75rem)] flex-col justify-center overflow-x-clip px-4 pt-6 pb-3 sm:block sm:min-h-0 sm:px-8 sm:py-8 md:p-8">
+    // Clipped sideways at the screen's edge: the banner's glow and the tilted
+    // marquee reach past it and would otherwise let the page scroll sideways.
+    <main className="overflow-x-clip px-4 pt-6 pb-3 sm:px-8 sm:py-8 md:p-8">
       <JsonLd data={applicationJsonLd} />
-      {/* The banner borrows its room from the surrounding gaps so the page
-          still fits one screen. */}
       <div
         className={cn(
-          "mx-auto max-w-4xl pt-9 sm:mb-4 sm:pt-0",
+          "relative isolate mx-auto max-w-4xl pt-9 sm:mb-4 sm:pt-0",
           VIDEOS_ENABLED ? "mb-3 lg:mt-0 lg:mb-5" : "mb-5 lg:my-8",
         )}
       >
@@ -100,6 +99,9 @@ export default function HomePage() {
             </div>
           </div>
         )}
+        <div className="mb-6 flex justify-center sm:mb-8">
+          <span className="label-chip">Free · Open source · AI-powered</span>
+        </div>
         <Hero />
         <div
           className={cn(
@@ -118,9 +120,10 @@ export default function HomePage() {
           </p>
         </div>
       </div>
-      <div className="flex justify-center sm:mb-16 lg:mb-0">
+      <div id="generate" className="flex scroll-mt-28 justify-center">
         <MainCard />
       </div>
+      <HomeSections />
     </main>
   );
 }

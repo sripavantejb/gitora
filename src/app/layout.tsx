@@ -1,8 +1,9 @@
 import "~/styles/globals.css";
 
-import { GeistSans } from "geist/font/sans";
+import { Archivo_Black, Inter, Space_Grotesk } from "next/font/google";
 import { type Metadata } from "next";
 import { Header } from "~/components/header";
+import { ScrollProgress } from "~/components/scroll-progress";
 import { Footer } from "~/components/footer";
 import { LivePresence } from "~/components/live-presence";
 import { CSPostHogProvider } from "./providers";
@@ -10,6 +11,25 @@ import { SponsorCampaignProvider } from "~/hooks/use-sponsor-campaign";
 import { renderedSponsorSchedule } from "~/lib/sponsor-campaign";
 import { SITE_URL } from "~/lib/site";
 import { chunkReloadScript } from "~/lib/chunk-reload";
+
+const archivoBlack = Archivo_Black({
+  weight: "400",
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-archivo-black",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-space-grotesk",
+});
 
 export const metadata: Metadata = {
   title: "GitDiagram",
@@ -79,17 +99,23 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${GeistSans.variable}`}
+      className={`${archivoBlack.variable} ${inter.variable} ${spaceGrotesk.variable}`}
     >
       <head>
         {/* Before any chunk loads: reload once if one fails (see chunk-reload.ts). */}
         <script dangerouslySetInnerHTML={{ __html: chunkReloadScript }} />
       </head>
-      <body className="flex min-h-screen flex-col">
+      <body className="flex min-h-screen flex-col font-inter">
+        <a href="#main" className="skip-link">
+          Skip to main content
+        </a>
+        <ScrollProgress />
         <CSPostHogProvider>
           <SponsorCampaignProvider {...renderedSponsorSchedule()}>
             <Header />
-            <div className="flex-grow">{children}</div>
+            <div id="main" tabIndex={-1} className="flex-grow outline-none">
+              {children}
+            </div>
             <Footer />
           </SponsorCampaignProvider>
           <LivePresence />

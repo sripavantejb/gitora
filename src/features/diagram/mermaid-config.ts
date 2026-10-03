@@ -33,13 +33,13 @@ export function buildMermaidConfig({
     },
     themeVariables: isDark
       ? {
-          background: backgroundColor ?? "#1f2631",
-          primaryColor: "#2c3544",
-          primaryBorderColor: "#6dd4e9",
-          primaryTextColor: "#e8edf5",
-          lineColor: "#ffd486",
-          secondaryColor: "#26303f",
-          tertiaryColor: "#323d4d",
+          background: backgroundColor ?? "#111111",
+          primaryColor: "#1a1a1a",
+          primaryBorderColor: "#c8f542",
+          primaryTextColor: "#f0f0f0",
+          lineColor: "#96c8ff",
+          secondaryColor: "#161616",
+          tertiaryColor: "#202020",
         }
       : {
           background: backgroundColor ?? "#ffffff",

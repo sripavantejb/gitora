@@ -144,8 +144,8 @@ function ChoicePicker<T extends string>({
             onFocus={() => setFocused(index)}
             className={`rounded-md border-[3px] border-black p-3 text-left transition-transform active:scale-[0.98] ${
               checked
-                ? "bg-purple-400 shadow-[4px_4px_0_0_#000] dark:bg-[hsl(var(--neo-button))] dark:text-black"
-                : "bg-white hover:bg-purple-100 dark:bg-black/20 dark:hover:bg-black/30"
+                ? "bg-lime shadow-[4px_4px_0_0_#000] dark:bg-[hsl(var(--neo-button))] dark:text-black"
+                : "bg-white hover:bg-purple dark:bg-black/20 dark:hover:bg-black/30"
             }`}
           >
             <div className="font-bold">{option.label}</div>

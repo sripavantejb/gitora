@@ -66,7 +66,7 @@ function Trend({
         fill="none"
         strokeWidth={2}
         vectorEffect="non-scaling-stroke"
-        className="stroke-purple-600 dark:stroke-purple-400"
+        className="stroke-lime dark:stroke-lime"
       />
     </svg>
   );

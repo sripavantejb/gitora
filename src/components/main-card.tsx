@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Sparkles, X } from "lucide-react";
+import { ArrowRight, X } from "lucide-react";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { exampleRepos } from "~/lib/exampleRepos";
@@ -15,7 +15,7 @@ import {
 import { captureAnalyticsEvent } from "~/lib/analytics-client";
 
 const CHIP_CLASS =
-  "h-9 border-2 border-black bg-purple-400 px-3 text-sm font-semibold text-black hover:bg-purple-300 sm:h-10 sm:px-4 sm:text-base sm:font-medium dark:border-black dark:bg-[hsl(var(--neo-panel-muted))] dark:text-[hsl(var(--foreground))] dark:hover:bg-[hsl(var(--neo-button))] dark:hover:text-[#0d0a19]";
+  "h-9 border-2 border-black bg-lime px-3 text-sm font-semibold text-black hover:bg-purple sm:h-10 sm:px-4 sm:text-base sm:font-medium dark:border-paper dark:bg-[hsl(var(--neo-panel-muted))] dark:text-[hsl(var(--foreground))] dark:hover:bg-[hsl(var(--neo-button))] dark:hover:text-[#0d0a19]";
 
 /**
  * The home page's repository form, with example repositories and, once this
@@ -144,7 +144,7 @@ export default function MainCard({ sponsor = true }: { sponsor?: boolean }) {
                   variant="outline"
                   title="Clear recent diagrams"
                   aria-label="Clear recent diagrams"
-                  className="size-9 shrink-0 border-2 border-black bg-transparent p-0 text-black hover:bg-purple-300 sm:size-10 dark:border-black dark:bg-transparent dark:text-[hsl(var(--foreground))] dark:hover:bg-[hsl(var(--neo-panel-muted))]"
+                  className="size-9 shrink-0 border-2 border-black bg-transparent p-0 text-black hover:bg-purple sm:size-10 dark:border-paper dark:bg-transparent dark:text-[hsl(var(--foreground))] dark:hover:bg-[hsl(var(--neo-panel-muted))]"
                   onClick={clearRecentDiagrams}
                 >
                   <X aria-hidden="true" />
@@ -160,14 +160,6 @@ export default function MainCard({ sponsor = true }: { sponsor?: boolean }) {
           )}
         </div>
       </form>
-
-      <div className="absolute -bottom-8 -left-12 hidden sm:block">
-        <Sparkles
-          className="h-20 w-20 fill-sky-400 text-black dark:fill-[hsl(var(--neo-button))] dark:text-[hsl(var(--background))]"
-          strokeWidth={0.6}
-          style={{ transform: "rotate(-15deg)" }}
-        />
-      </div>
     </div>
   );
 }

@@ -7,14 +7,28 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["var(--font-geist-sans)", ...defaultTheme.fontFamily.sans],
+        sans: ["var(--font-inter)", ...defaultTheme.fontFamily.sans],
+        inter: ["var(--font-inter)", ...defaultTheme.fontFamily.sans],
+        archivo: ["var(--font-archivo-black)", ...defaultTheme.fontFamily.sans],
+        display: [
+          "var(--font-space-grotesk)",
+          ...defaultTheme.fontFamily.sans,
+        ],
       },
       borderRadius: {
         lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        md: "max(0px, calc(var(--radius) - 2px))",
+        sm: "max(0px, calc(var(--radius) - 4px))",
       },
       colors: {
+        ink: "#0a0a0a",
+        paper: "#f0f0f0",
+        lime: { DEFAULT: "#c8f542" },
+        sky: { DEFAULT: "#96c8ff" },
+        orange: { DEFAULT: "#ff4e00" },
+        purple: { DEFAULT: "#c3a4f6" },
+        green: { DEFAULT: "#2fdf92" },
+        pink: { DEFAULT: "#fca5cc" },
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         popover: {
