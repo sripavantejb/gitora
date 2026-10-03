@@ -38,7 +38,8 @@ export async function POST(request: Request) {
     });
     const node = nodeById(loaded, nodeId);
     if (!node) return json({ ok: false, error: "Unknown node." }, 404);
-    if (kind === "impact") return json({ ok: true, impact: getImpact(loaded, node) });
+    if (kind === "impact")
+      return json({ ok: true, impact: getImpact(loaded, node) });
     const list =
       kind === "dependencies"
         ? getDependencies(loaded, node)

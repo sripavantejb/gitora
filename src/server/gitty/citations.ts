@@ -35,7 +35,8 @@ export async function validateCitations(
     }
     if (
       citation.startLine !== undefined &&
-      (citation.startLine < 1 || (citation.endLine ?? citation.startLine) > file.totalLines)
+      (citation.startLine < 1 ||
+        (citation.endLine ?? citation.startLine) > file.totalLines)
     ) {
       rejected.add(citation.raw);
       continue;

@@ -81,7 +81,7 @@ export function Footer() {
               href="https://github.com/sripavantejb"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-semibold text-lime hover:underline"
+              className="text-lime font-semibold hover:underline"
             >
               sripavantejb
             </Link>

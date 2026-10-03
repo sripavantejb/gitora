@@ -52,7 +52,7 @@ const LAYER_ORDER: Record<Layer, number> = {
   data: 3,
 };
 
-export function featureTokens(feature: string): string[] {
+function featureTokens(feature: string): string[] {
   const words = feature
     .replace(/([a-z])([A-Z])/g, "$1 $2")
     .toLowerCase()
@@ -72,13 +72,30 @@ export function layerOf(
   usesDatabase: boolean,
 ): Layer {
   const lower = path.toLowerCase();
-  if (hasRoute || /(?:^|\/)(?:api|routes?|controllers?|handlers?|endpoints?|views\.py)(?:\/|\.|$)/.test(lower))
+  if (
+    hasRoute ||
+    /(?:^|\/)(?:api|routes?|controllers?|handlers?|endpoints?|views\.py)(?:\/|\.|$)/.test(
+      lower,
+    )
+  )
     return "route";
-  if (usesDatabase || /(?:^|\/)(?:db|database|models?|repositor(?:y|ies)|schema|prisma|drizzle|migrations?|store|dao|entities)(?:\/|\.|$)/.test(lower))
+  if (
+    usesDatabase ||
+    /(?:^|\/)(?:db|database|models?|repositor(?:y|ies)|schema|prisma|drizzle|migrations?|store|dao|entities)(?:\/|\.|$)/.test(
+      lower,
+    )
+  )
     return "data";
-  if (/\.(?:tsx|jsx|vue|svelte)$/.test(lower) || /(?:^|\/)(?:components?|pages|views|screens|ui|templates)\//.test(lower))
+  if (
+    /\.(?:tsx|jsx|vue|svelte)$/.test(lower) ||
+    /(?:^|\/)(?:components?|pages|views|screens|ui|templates)\//.test(lower)
+  )
     return "ui";
-  if (/(?:^|\/)(?:services?|lib|server|core|domain|usecases?|actions?|features?|modules?)\//.test(lower))
+  if (
+    /(?:^|\/)(?:services?|lib|server|core|domain|usecases?|actions?|features?|modules?)\//.test(
+      lower,
+    )
+  )
     return "service";
   return "other";
 }
@@ -105,7 +122,13 @@ export function traceCandidates(
     for (const token of tokens) {
       let tokenScore = 0;
       if (lowerPath.includes(token)) tokenScore += 6;
-      if (symbols.some((symbol) => symbol.name.toLowerCase().includes(token) || symbol.route?.toLowerCase().includes(token)))
+      if (
+        symbols.some(
+          (symbol) =>
+            symbol.name.toLowerCase().includes(token) ||
+            symbol.route?.toLowerCase().includes(token),
+        )
+      )
         tokenScore += 4;
       let count = 0;
       let at = lowerText.indexOf(token);
@@ -140,7 +163,9 @@ export function traceCandidates(
   }
   scored.sort((a, b) => b.score - a.score || (a.path < b.path ? -1 : 1));
   const minimum = (scored[0]?.score ?? 0) * 0.2;
-  const picked = scored.filter((candidate) => candidate.score >= minimum).slice(0, MAX_CANDIDATES);
+  const picked = scored
+    .filter((candidate) => candidate.score >= minimum)
+    .slice(0, MAX_CANDIDATES);
 
   // The data files the picks import complete the flow downwards.
   const pickedPaths = new Set(picked.map((candidate) => candidate.path));
@@ -174,19 +199,29 @@ function linked(a: TraceCandidate | undefined, b: TraceCandidate): boolean {
   return a.linksTo.includes(b.nodeId) || b.linksTo.includes(a.nodeId);
 }
 
-function graphTrace(feature: string, candidates: TraceCandidate[], note?: string): TraceResult {
-  const steps: TraceStep[] = candidates.slice(0, 6).map((candidate, index, list) => ({
-    nodeId: candidate.nodeId,
-    label: candidate.path.split("/").at(-1) ?? candidate.path,
-    path: candidate.path,
-    explanation: `${candidate.layer === "other" ? "" : `${LAYER_LABEL[candidate.layer]} · `}${
-      candidate.matched.length
-        ? `mentions ${candidate.matched.map((token) => `“${token}”`).join(", ")}`
-        : "imported by an earlier step and talks to a database"
-    }`,
-    source: { path: candidate.path, startLine: candidate.line, endLine: candidate.line },
-    verifiedLink: linked(list[index - 1], candidate),
-  }));
+function graphTrace(
+  feature: string,
+  candidates: TraceCandidate[],
+  note?: string,
+): TraceResult {
+  const steps: TraceStep[] = candidates
+    .slice(0, 6)
+    .map((candidate, index, list) => ({
+      nodeId: candidate.nodeId,
+      label: candidate.path.split("/").at(-1) ?? candidate.path,
+      path: candidate.path,
+      explanation: `${candidate.layer === "other" ? "" : `${LAYER_LABEL[candidate.layer]} · `}${
+        candidate.matched.length
+          ? `mentions ${candidate.matched.map((token) => `“${token}”`).join(", ")}`
+          : "imported by an earlier step and talks to a database"
+      }`,
+      source: {
+        path: candidate.path,
+        startLine: candidate.line,
+        endLine: candidate.line,
+      },
+      verifiedLink: linked(list[index - 1], candidate),
+    }));
   return {
     feature,
     title: `Files involved in “${feature}”`,
@@ -196,7 +231,10 @@ function graphTrace(feature: string, candidates: TraceCandidate[], note?: string
   };
 }
 
-function excerptAround(loaded: LoadedRepository, candidate: TraceCandidate): string {
+function excerptAround(
+  loaded: LoadedRepository,
+  candidate: TraceCandidate,
+): string {
   const text = loaded.texts.get(candidate.path);
   if (!text) return "";
   const center = candidate.line ?? 1;
@@ -211,11 +249,23 @@ export async function runTrace(
 ): Promise<TraceResult> {
   const candidates = traceCandidates(loaded, feature);
   if (!candidates.length)
-    return { feature, title: feature, steps: [], method: "graph", note: NO_EVIDENCE_MESSAGE };
+    return {
+      feature,
+      title: feature,
+      steps: [],
+      method: "graph",
+      note: NO_EVIDENCE_MESSAGE,
+    };
   if (!provider)
-    return graphTrace(feature, candidates, "AI is not configured, so this is the deterministic ordering only.");
+    return graphTrace(
+      feature,
+      candidates,
+      "AI is not configured, so this is the deterministic ordering only.",
+    );
 
-  const byId = new Map(candidates.map((candidate) => [candidate.nodeId, candidate]));
+  const byId = new Map(
+    candidates.map((candidate) => [candidate.nodeId, candidate]),
+  );
   const prompt = [
     `Trace how the feature "${feature}" flows through this repository.`,
     "You may ONLY use the candidate nodes below. They were found by Gitty's analysis; their layers and import links are facts.",
@@ -250,21 +300,39 @@ export async function runTrace(
   const raw = (parsed as { title?: unknown; steps?: unknown } | null) ?? null;
   const rawSteps = Array.isArray(raw?.steps) ? raw.steps : null;
   if (!rawSteps)
-    return graphTrace(feature, candidates, "Gemma returned an unusable trace, so this is the deterministic ordering only.");
+    return graphTrace(
+      feature,
+      candidates,
+      "Gemma returned an unusable trace, so this is the deterministic ordering only.",
+    );
   if (!rawSteps.length)
-    return { feature, title: feature, steps: [], method: "ai", note: NO_EVIDENCE_MESSAGE };
+    return {
+      feature,
+      title: feature,
+      steps: [],
+      method: "ai",
+      note: NO_EVIDENCE_MESSAGE,
+    };
 
   const steps: TraceStep[] = [];
   const used = new Set<string>();
   let previous: TraceCandidate | undefined;
   for (const entry of rawSteps.slice(0, MAX_STEPS)) {
-    const step = entry as { node_id?: unknown; line?: unknown; explanation?: unknown };
-    const candidate = typeof step.node_id === "string" ? byId.get(step.node_id) : undefined;
+    const step = entry as {
+      node_id?: unknown;
+      line?: unknown;
+      explanation?: unknown;
+    };
+    const candidate =
+      typeof step.node_id === "string" ? byId.get(step.node_id) : undefined;
     if (!candidate || used.has(candidate.nodeId)) continue;
     used.add(candidate.nodeId);
     const total = loaded.texts.get(candidate.path)?.split("\n").length ?? 0;
     const line =
-      typeof step.line === "number" && Number.isInteger(step.line) && step.line >= 1 && step.line <= total
+      typeof step.line === "number" &&
+      Number.isInteger(step.line) &&
+      step.line >= 1 &&
+      step.line <= total
         ? step.line
         : candidate.line;
     steps.push({
@@ -281,7 +349,11 @@ export async function runTrace(
     previous = candidate;
   }
   if (!steps.length)
-    return graphTrace(feature, candidates, "Gemma referenced nodes outside the analysis, so this is the deterministic ordering only.");
+    return graphTrace(
+      feature,
+      candidates,
+      "Gemma referenced nodes outside the analysis, so this is the deterministic ordering only.",
+    );
   return {
     feature,
     title:

@@ -2,20 +2,17 @@
 // deterministically on the server from the repository itself; the model only
 // reasons over it and never adds nodes or edges.
 
-export const CODE_NODE_TYPES = [
-  "REPOSITORY",
-  "APPLICATION",
-  "MODULE",
-  "DIRECTORY",
-  "FILE",
-  "CLASS",
-  "FUNCTION",
-  "API_ROUTE",
-  "DATABASE",
-  "EXTERNAL_SERVICE",
-] as const;
-
-export type CodeNodeType = (typeof CODE_NODE_TYPES)[number];
+export type CodeNodeType =
+  | "REPOSITORY"
+  | "APPLICATION"
+  | "MODULE"
+  | "DIRECTORY"
+  | "FILE"
+  | "CLASS"
+  | "FUNCTION"
+  | "API_ROUTE"
+  | "DATABASE"
+  | "EXTERNAL_SERVICE";
 
 export interface CodeNode {
   /** Stable id: `repo`, `dir:<path>`, `file:<path>`, `sym:<path>#<name>@<line>`, `ext:<name>`, `db:<name>`. */
@@ -36,7 +33,7 @@ export interface CodeNode {
   route?: string;
 }
 
-export type CodeEdgeKind = "imports" | "uses_service" | "uses_database";
+type CodeEdgeKind = "imports" | "uses_service" | "uses_database";
 
 export interface CodeEdge {
   from: string;

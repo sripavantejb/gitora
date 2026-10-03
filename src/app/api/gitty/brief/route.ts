@@ -32,8 +32,12 @@ export async function POST(request: Request) {
       signal: request.signal,
     });
     const node = nodeById(loaded, nodeId);
-    if (!node) return json({ ok: false, error: "That node is not on the map." }, 404);
-    return json({ ok: true, ...(await runBrief(loaded, node, provider, request.signal)) });
+    if (!node)
+      return json({ ok: false, error: "That node is not on the map." }, 404);
+    return json({
+      ok: true,
+      ...(await runBrief(loaded, node, provider, request.signal)),
+    });
   } catch (error) {
     return errorResponse(error, Boolean(admitted.githubPat));
   }

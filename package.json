@@ -122,17 +122,20 @@
       "scripts/video-pipeline-test.mjs",
       "scripts/compare-hosts.mjs",
       "scripts/cf-usage.mjs",
-      "scripts/bench.mjs"
+      "scripts/bench.mjs",
+      "scripts/sync-sponsor-readme.ts"
     ],
     "ignore": [
       "experiments/**",
       "public/video-engine/**",
       "workers/**",
-      "cloudflare/**"
+      "cloudflare/**",
+      "src/components/theme-toggle.tsx"
     ],
     "ignoreDependencies": [
       "@cloudflare/containers",
       "@opennextjs/aws",
+      "geist",
       "typescript-7",
       "wrangler"
     ],

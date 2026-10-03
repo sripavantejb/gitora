@@ -12,11 +12,12 @@ import { matchService } from "./services";
 import { analyzeSource, ecosystemOf, type FileAnalysis } from "./symbols";
 
 /** Files placed on the map; bigger trees show the most relevant ones. */
-export const MAX_GRAPH_FILES = 2500;
+const MAX_GRAPH_FILES = 2500;
 
 const APP_MANIFEST =
   /^(?:package\.json|go\.mod|Cargo\.toml|pyproject\.toml|setup\.py|pom\.xml|build\.gradle(?:\.kts)?|composer\.json|Gemfile|mix\.exs)$/;
-const APP_ROOTS = /^(?:apps?|services|cmd|web|frontend|backend|server|client|api)$/i;
+const APP_ROOTS =
+  /^(?:apps?|services|cmd|web|frontend|backend|server|client|api)$/i;
 const MODULE_ROOTS = /^(?:packages|libs?|crates|modules|internal|pkg)$/i;
 /** Folders whose manifests describe samples or tooling, not the product. */
 const NON_PRODUCT =
@@ -52,7 +53,7 @@ export function languageOf(path: string): string | undefined {
 
 export const fileId = (path: string) => `file:${path}`;
 export const dirId = (path: string) => `dir:${path}`;
-export const symbolId = (path: string, name: string, line: number) =>
+const symbolId = (path: string, name: string, line: number) =>
   `sym:${path}#${name}@${line}`;
 /** The declared name inside a symbol id. */
 export const symbolNameOf = (id: string) => {
@@ -72,16 +73,18 @@ function baseName(path: string): string {
 /** The line where `text` names `target` (an import line, preferably). */
 export function evidenceLine(text: string, target: string): number | undefined {
   const stem = baseName(target).replace(/\.[^.]+$/, "");
-  const token = stem === "index" || stem === "__init__" || stem === "mod"
-    ? baseName(parentOf(target))
-    : stem;
+  const token =
+    stem === "index" || stem === "__init__" || stem === "mod"
+      ? baseName(parentOf(target))
+      : stem;
   if (!token) return undefined;
   const lines = text.split("\n");
   let fallback: number | undefined;
   for (let index = 0; index < lines.length; index++) {
     const line = lines[index]!;
     if (!line.includes(token)) continue;
-    if (/\b(?:import|from|require|use|include|mod)\b/.test(line)) return index + 1;
+    if (/\b(?:import|from|require|use|include|mod)\b/.test(line))
+      return index + 1;
     fallback ??= index + 1;
   }
   return fallback;
@@ -117,8 +120,7 @@ export function buildCodebaseGraph(input: BuildGraphInput): BuiltGraph {
     const rest = allFiles
       .filter((path) => !keep.has(path))
       .sort(
-        (a, b) =>
-          a.split("/").length - b.split("/").length || (a < b ? -1 : 1),
+        (a, b) => a.split("/").length - b.split("/").length || (a < b ? -1 : 1),
       );
     for (const path of rest) {
       if (keep.size >= MAX_GRAPH_FILES) break;
@@ -154,7 +156,8 @@ export function buildCodebaseGraph(input: BuildGraphInput): BuiltGraph {
   const directoryType = (path: string): CodeNode["type"] => {
     const segments = path.split("/");
     const root = segments[0]!;
-    if (segments.some((segment) => NON_PRODUCT.test(segment))) return "DIRECTORY";
+    if (segments.some((segment) => NON_PRODUCT.test(segment)))
+      return "DIRECTORY";
     if (segments.length === 2 && APP_ROOTS.test(root)) return "APPLICATION";
     if (segments.length === 2 && MODULE_ROOTS.test(root)) return "MODULE";
     if (manifestDirectories.has(path))
@@ -230,7 +233,8 @@ export function buildCodebaseGraph(input: BuildGraphInput): BuiltGraph {
     }
 
     for (const target of input.references.get(path) ?? []) {
-      const to = input.pathTypes.get(target) === "tree" ? dirId(target) : fileId(target);
+      const to =
+        input.pathTypes.get(target) === "tree" ? dirId(target) : fileId(target);
       if (!nodes.has(to) || to === from) continue;
       const line = evidenceLine(text, target);
       edges.push({

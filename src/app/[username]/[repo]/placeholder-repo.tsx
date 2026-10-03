@@ -26,11 +26,8 @@ export function PlaceholderRepo({
     <main className="flex min-h-[calc(100svh-9.75rem)] flex-col justify-center overflow-x-clip px-4 pt-6 pb-3 sm:block sm:min-h-0 sm:px-8 sm:py-8 md:p-8">
       <div className="mx-auto mb-6 max-w-4xl pt-4 sm:mb-10 sm:pt-0 lg:mt-8">
         <h1 className="text-center text-[clamp(2rem,9vw,3rem)] leading-[1.05] font-bold tracking-tight text-balance sm:text-5xl">
-          Swap{" "}
-          <span className="bg-lime px-1 text-ink">
-            {typed}
-          </span>{" "}
-          for a real repository
+          Swap <span className="bg-lime text-ink px-1">{typed}</span> for a real
+          repository
         </h1>
         <div className="mx-auto mt-5 max-w-[22rem] space-y-3 text-center text-[1.0625rem] leading-6 text-balance text-[hsl(var(--neo-soft-text))] sm:mt-8 sm:max-w-2xl sm:text-lg sm:leading-normal">
           <p>

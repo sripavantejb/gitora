@@ -6,7 +6,11 @@ import type {
   ImpactResult,
 } from "~/features/gitty/types";
 
-import { AiToolsUnsupportedError, type AiMessage, type AiProvider } from "./ai/types";
+import {
+  AiToolsUnsupportedError,
+  type AiMessage,
+  type AiProvider,
+} from "./ai/types";
 import { validateCitations } from "./citations";
 import { buildNodeContext, repositoryStructure } from "./context";
 import { parseModelJson } from "./model-json";
@@ -14,7 +18,7 @@ import type { LoadedRepository } from "./repository";
 import { executeToolCall, toolCatalog, toolSpecs } from "./tools";
 import { NO_EVIDENCE_MESSAGE } from "./trace";
 
-export const MAX_TOOL_ROUNDS = 4;
+const MAX_TOOL_ROUNDS = 4;
 const MAX_CALLS_PER_ROUND = 3;
 const MAX_EVIDENCE_CHARACTERS = 60_000;
 const MAX_HISTORY_TURNS = 6;
@@ -89,7 +93,7 @@ export function parseDecision(reply: string): Decision {
   const list = Array.isArray(value)
     ? value
     : Array.isArray((value as { calls?: unknown }).calls)
-      ? ((value as { calls: unknown[] }).calls)
+      ? (value as { calls: unknown[] }).calls
       : null;
   if (list) {
     const calls = list
@@ -100,10 +104,17 @@ export function parseDecision(reply: string): Decision {
       .map((entry) => ({ tool: entry.tool, arguments: entry.arguments ?? {} }));
     return calls.length ? { kind: "calls", calls } : { kind: "malformed" };
   }
-  const single = value as { ready?: unknown; tool?: unknown; arguments?: unknown };
+  const single = value as {
+    ready?: unknown;
+    tool?: unknown;
+    arguments?: unknown;
+  };
   if (single.ready === true) return { kind: "ready" };
   if (typeof single.tool === "string")
-    return { kind: "calls", calls: [{ tool: single.tool, arguments: single.arguments ?? {} }] };
+    return {
+      kind: "calls",
+      calls: [{ tool: single.tool, arguments: single.arguments ?? {} }],
+    };
   return { kind: "malformed" };
 }
 
@@ -116,14 +127,16 @@ export function parseToolArguments(raw: string): unknown {
   if (!raw.trim()) return {};
   try {
     const value: unknown = JSON.parse(raw);
-    return value && typeof value === "object" && !Array.isArray(value) ? value : MALFORMED_ARGUMENTS;
+    return value && typeof value === "object" && !Array.isArray(value)
+      ? value
+      : MALFORMED_ARGUMENTS;
   } catch {
     return MALFORMED_ARGUMENTS;
   }
 }
 
 /** A native-tools reply without tool calls: some servers put a JSON request in the text instead. */
-export function decisionFromText(text: string): Decision {
+function decisionFromText(text: string): Decision {
   const decision = parseDecision(text);
   return decision.kind === "calls" ? decision : { kind: "ready" };
 }
@@ -149,7 +162,9 @@ export interface AgentRequest {
   nativeToolsOnly?: boolean;
 }
 
-export async function* runAgent(request: AgentRequest): AsyncGenerator<AskStreamEvent> {
+export async function* runAgent(
+  request: AgentRequest,
+): AsyncGenerator<AskStreamEvent> {
   const { loaded, provider, mode, node, signal } = request;
   const evidence: Evidence = { text: "", seen: new Set() };
 
@@ -157,12 +172,18 @@ export async function* runAgent(request: AgentRequest): AsyncGenerator<AskStream
   const context = node
     ? await buildNodeContext(loaded, node, signal)
     : repositoryStructure(loaded);
-  addEvidence(evidence, context.text, context.sources.map((source) => source.path));
+  addEvidence(
+    evidence,
+    context.text,
+    context.sources.map((source) => source.path),
+  );
   if (request.impact)
     addEvidence(
       evidence,
       impactText(request.impact),
-      [...request.impact.direct, ...request.impact.indirect].map((entry) => entry.path),
+      [...request.impact.direct, ...request.impact.indirect].map(
+        (entry) => entry.path,
+      ),
     );
 
   const history: AiMessage[] = request.history
@@ -177,11 +198,15 @@ export async function* runAgent(request: AgentRequest): AsyncGenerator<AskStream
         : mode === "impact"
           ? `What breaks if ${node?.label ?? "this"} changes?`
           : "Give an overview of this repository.");
-  const focus = node ? `The user selected ${node.type} ${node.label} (node_id ${node.id}).` : "The user is asking about the whole repository.";
+  const focus = node
+    ? `The user selected ${node.type} ${node.label} (node_id ${node.id}).`
+    : "The user is asking about the whole repository.";
 
   // Research: the model asks for tools; the application validates and runs them.
   const toolsKey = `${provider.id}:${provider.model}`;
-  let native = Boolean(provider.completeWithTools) && !NATIVE_TOOLS_UNSUPPORTED.has(toolsKey);
+  let native =
+    Boolean(provider.completeWithTools) &&
+    !NATIVE_TOOLS_UNSUPPORTED.has(toolsKey);
   let malformed = 0;
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
     signal?.throwIfAborted();
@@ -208,11 +233,18 @@ export async function* runAgent(request: AgentRequest): AsyncGenerator<AskStream
                 kind: "calls",
                 calls: turn.calls
                   .slice(0, MAX_CALLS_PER_ROUND)
-                  .map((call) => ({ tool: call.name, arguments: parseToolArguments(call.arguments) })),
+                  .map((call) => ({
+                    tool: call.name,
+                    arguments: parseToolArguments(call.arguments),
+                  })),
               }
             : decisionFromText(turn.text);
       } catch (error) {
-        if (!(error instanceof AiToolsUnsupportedError) || request.nativeToolsOnly) throw error;
+        if (
+          !(error instanceof AiToolsUnsupportedError) ||
+          request.nativeToolsOnly
+        )
+          throw error;
         NATIVE_TOOLS_UNSUPPORTED.add(toolsKey);
         native = false;
         round--;
@@ -238,21 +270,38 @@ export async function* runAgent(request: AgentRequest): AsyncGenerator<AskStream
     if (decision.kind === "malformed") {
       malformed++;
       if (malformed >= 2) {
-        yield { type: "status", message: "Gemma's tool request was malformed; answering from the evidence gathered" };
+        yield {
+          type: "status",
+          message:
+            "Gemma's tool request was malformed; answering from the evidence gathered",
+        };
         break;
       }
-      addEvidence(evidence, "NOTE: your previous reply was not valid JSON. Reply with JSON only.", []);
+      addEvidence(
+        evidence,
+        "NOTE: your previous reply was not valid JSON. Reply with JSON only.",
+        [],
+      );
       continue;
     }
     for (const call of decision.calls) {
       const name = typeof call.tool === "string" ? call.tool : "?";
       if (call.arguments === MALFORMED_ARGUMENTS) {
         malformed++;
-        addEvidence(evidence, `TOOL ${name} FAILED: the arguments were not valid JSON.`, []);
+        addEvidence(
+          evidence,
+          `TOOL ${name} FAILED: the arguments were not valid JSON.`,
+          [],
+        );
         continue;
       }
       yield { type: "tool", name, summary: summarizeArgs(call.arguments) };
-      const result = await executeToolCall(loaded, call.tool, call.arguments, signal);
+      const result = await executeToolCall(
+        loaded,
+        call.tool,
+        call.arguments,
+        signal,
+      );
       const added = result.ok
         ? addEvidence(
             evidence,

@@ -64,7 +64,9 @@ export async function POST(request: Request) {
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       const send = (event: AskStreamEvent) =>
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
+        controller.enqueue(
+          encoder.encode(`data: ${JSON.stringify(event)}\n\n`),
+        );
       try {
         for await (const event of runAgent({
           loaded,
@@ -72,7 +74,8 @@ export async function POST(request: Request) {
           mode,
           question,
           node,
-          impact: mode === "impact" && node ? getImpact(loaded, node) : undefined,
+          impact:
+            mode === "impact" && node ? getImpact(loaded, node) : undefined,
           history,
           signal: request.signal,
           nativeToolsOnly: requiresNativeTools(),
@@ -80,7 +83,10 @@ export async function POST(request: Request) {
           send(event);
       } catch (error) {
         if (!request.signal.aborted)
-          send({ type: "error", message: toPublicError(error, hasToken).message });
+          send({
+            type: "error",
+            message: toPublicError(error, hasToken).message,
+          });
       } finally {
         controller.close();
       }

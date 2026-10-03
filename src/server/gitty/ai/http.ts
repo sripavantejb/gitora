@@ -64,7 +64,11 @@ function retryAfterMs(header: string | null): number | null {
   return Number.isNaN(date) ? null : Math.max(0, date - Date.now());
 }
 
-export function backoffDelay(attempt: number, retryAfter: number | null, random = Math.random): number {
+export function backoffDelay(
+  attempt: number,
+  retryAfter: number | null,
+  random = Math.random,
+): number {
   const base = retryAfter ?? 500 * 2 ** attempt;
   return Math.min(MAX_RETRY_DELAY_MS, base + Math.floor(random() * 250));
 }
@@ -132,7 +136,11 @@ export async function postWithRetry(
             502,
           );
     }
-    if (!response.ok && TRANSIENT_STATUSES.has(response.status) && attempt < options.maxRetries) {
+    if (
+      !response.ok &&
+      TRANSIENT_STATUSES.has(response.status) &&
+      attempt < options.maxRetries
+    ) {
       clearTimeout(timer);
       const wait = retryAfterMs(response.headers.get("retry-after"));
       await response.body?.cancel().catch(() => undefined);
@@ -160,7 +168,12 @@ export async function readErrorDetail(response: Response): Promise<string> {
         detail?: string;
       };
       const error = body.error;
-      return (typeof error === "string" ? error : error?.message) ?? body.message ?? body.detail ?? text;
+      return (
+        (typeof error === "string" ? error : error?.message) ??
+        body.message ??
+        body.detail ??
+        text
+      );
     } catch {
       return text;
     }

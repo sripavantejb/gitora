@@ -197,14 +197,14 @@ export function HomeSections() {
       <Marquee />
 
       <section aria-label="GitDiagram at a glance" className="home-container">
-        <div className="grid grid-cols-2 border-[3px] border-ink bg-white shadow-[8px_8px_0_0_#0a0a0a] lg:grid-cols-4">
+        <div className="border-ink grid grid-cols-2 border-[3px] bg-white shadow-[8px_8px_0_0_#0a0a0a] lg:grid-cols-4">
           {stats.map((stat, index) => (
             <div
               key={stat.label}
               className={cn(
                 "p-6 sm:p-8",
-                index % 2 === 0 && "border-r-[3px] border-ink",
-                index < 2 && "border-b-[3px] border-ink lg:border-b-0",
+                index % 2 === 0 && "border-ink border-r-[3px]",
+                index < 2 && "border-ink border-b-[3px] lg:border-b-0",
                 index === 1 && "lg:border-r-[3px]",
                 index === 2 && "lg:border-r-[3px]",
               )}
@@ -233,7 +233,7 @@ export function HomeSections() {
               <span className="font-archivo text-6xl leading-none text-transparent [-webkit-text-stroke:2px_#0a0a0a]">
                 {step.number}
               </span>
-              <h3 className="mt-6 font-archivo text-xl tracking-tight uppercase">
+              <h3 className="font-archivo mt-6 text-xl tracking-tight uppercase">
                 {step.title}
               </h3>
               <p className="mt-3 leading-relaxed text-neutral-600">
@@ -268,7 +268,7 @@ export function HomeSections() {
                 <span className="icon-box">
                   <Icon className="h-5 w-5" aria-hidden="true" />
                 </span>
-                <h3 className="mt-6 font-archivo text-lg leading-tight tracking-tight uppercase">
+                <h3 className="font-archivo mt-6 text-lg leading-tight tracking-tight uppercase">
                   {feature.title}
                 </h3>
                 <p
@@ -308,7 +308,7 @@ export function HomeSections() {
                   <span className="icon-box">
                     <Icon className="h-5 w-5" aria-hidden="true" />
                   </span>
-                  <h3 className="mt-5 font-archivo text-lg tracking-tight uppercase">
+                  <h3 className="font-archivo mt-5 text-lg tracking-tight uppercase">
                     {useCase.title}
                   </h3>
                   <p className="mt-2 leading-relaxed text-neutral-700">
@@ -347,13 +347,13 @@ export function HomeSections() {
               )}
             >
               <span className="meta-label">{path.slice(1)}</span>
-              <h3 className="mt-3 font-archivo text-2xl tracking-tight uppercase">
+              <h3 className="font-archivo mt-3 text-2xl tracking-tight uppercase">
                 {name}
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-neutral-700">
                 {exampleDescriptions[name]}
               </p>
-              <span className="mt-auto flex items-center gap-2 border-t-2 border-ink/15 pt-4 font-archivo text-xs tracking-[0.12em] uppercase">
+              <span className="border-ink/15 font-archivo mt-auto flex items-center gap-2 border-t-2 pt-4 text-xs tracking-[0.12em] uppercase">
                 Open diagram
                 <ArrowRight
                   className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1"
@@ -397,13 +397,13 @@ export function HomeSections() {
           <span className="label-chip">Get started</span>
           <h2 className="mx-auto mt-6 max-w-3xl text-[clamp(2rem,6vw,4rem)] leading-[1.02] tracking-tight text-white">
             Map your next{" "}
-            <span className="inline-block bg-lime px-[0.18em] text-ink">
+            <span className="bg-lime text-ink inline-block px-[0.18em]">
               codebase
             </span>
           </h2>
           <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-neutral-300 sm:text-lg">
-            Paste a repository and get an interactive diagram in seconds.
-            Free, open source, no sign-up.
+            Paste a repository and get an interactive diagram in seconds. Free,
+            open source, no sign-up.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
@@ -417,7 +417,7 @@ export function HomeSections() {
               href={GITHUB_REPO_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-12 items-center gap-2 border-[3px] border-white px-6 font-archivo text-sm tracking-[0.02em] text-white uppercase transition-colors hover:bg-white hover:text-ink"
+              className="font-archivo hover:text-ink inline-flex h-12 items-center gap-2 border-[3px] border-white px-6 text-sm tracking-[0.02em] text-white uppercase transition-colors hover:bg-white"
             >
               Star on GitHub
             </Link>

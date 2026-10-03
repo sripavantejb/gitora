@@ -5,7 +5,9 @@ import { buildCodebaseGraph } from "./analysis/build-graph";
 import type { LoadedRepository } from "./repository";
 
 /** An analyzed repository built from in-memory files, for tests. */
-export function fixtureRepository(files: Record<string, string>): LoadedRepository {
+export function fixtureRepository(
+  files: Record<string, string>,
+): LoadedRepository {
   const pathTypes = new Map<string, RepositoryPathType>();
   for (const path of Object.keys(files)) {
     pathTypes.set(path, "blob");
@@ -22,7 +24,9 @@ export function fixtureRepository(files: Record<string, string>): LoadedReposito
     pathTypes,
   };
   const texts = new Map(
-    Object.entries(files).filter(([path]) => !/\.(?:md|env)$|^\.env/.test(path)),
+    Object.entries(files).filter(
+      ([path]) => !/\.(?:md|env)$|^\.env/.test(path),
+    ),
   );
   const resolve = createReferenceResolver(pathTypes);
   const references = new Map<string, string[]>();

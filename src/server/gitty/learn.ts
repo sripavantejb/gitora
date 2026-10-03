@@ -28,20 +28,34 @@ export function learningStops(loaded: LoadedRepository): Stop[] {
     stops.push({ nodeId: fileId(path), path, reason });
   };
   const paths = [...loaded.githubData.pathTypes.keys()];
-  add(paths.find((path) => /^readme(?:\.\w+)?$/i.test(path)), "Project overview");
-  add(paths.find((path) => !path.includes("/") && isManifestPath(path)), "Dependencies and scripts");
+  add(
+    paths.find((path) => /^readme(?:\.\w+)?$/i.test(path)),
+    "Project overview",
+  );
+  add(
+    paths.find((path) => !path.includes("/") && isManifestPath(path)),
+    "Dependencies and scripts",
+  );
   for (const id of loaded.graph.entryPoints.slice(0, 2))
     add(index.get(id)?.path, "Entry point");
   const core = [...loaded.texts.keys()]
     .map((path) => ({ path, users: loaded.importers.get(path)?.length ?? 0 }))
-    .filter((entry) => entry.users >= 2 && !/(?:^|\/)(?:types?|constants?|utils?|index)\.[^/]+$/i.test(entry.path))
+    .filter(
+      (entry) =>
+        entry.users >= 2 &&
+        !/(?:^|\/)(?:types?|constants?|utils?|index)\.[^/]+$/i.test(entry.path),
+    )
     .sort((a, b) => b.users - a.users);
-  for (const entry of core.slice(0, 2)) add(entry.path, `Core module (imported by ${entry.users} files)`);
+  for (const entry of core.slice(0, 2))
+    add(entry.path, `Core module (imported by ${entry.users} files)`);
   const route = loaded.graph.nodes.find((node) => node.type === "API_ROUTE");
   add(route?.path, "Request boundary");
-  const databaseUser = loaded.graph.edges.find((edge) => edge.kind === "uses_database")?.evidence?.path;
+  const databaseUser = loaded.graph.edges.find(
+    (edge) => edge.kind === "uses_database",
+  )?.evidence?.path;
   add(databaseUser, "Data access");
-  for (const entry of core.slice(2)) add(entry.path, `Core module (imported by ${entry.users} files)`);
+  for (const entry of core.slice(2))
+    add(entry.path, `Core module (imported by ${entry.users} files)`);
   return stops;
 }
 
@@ -70,10 +84,18 @@ export async function runLearn(
       steps: [],
       note: "I couldn't find enough evidence in this repository to build a learning path.",
     };
-  if (!provider) return fallback(stops, "AI is not configured, so only the reading order is shown.");
+  if (!provider)
+    return fallback(
+      stops,
+      "AI is not configured, so only the reading order is shown.",
+    );
 
   const excerpts = stops.map((stop) => {
-    const text = loaded.texts.get(stop.path) ?? (stop.path.toLowerCase().startsWith("readme") ? loaded.githubData.readme : "");
+    const text =
+      loaded.texts.get(stop.path) ??
+      (stop.path.toLowerCase().startsWith("readme")
+        ? loaded.githubData.readme
+        : "");
     return `STOP node_id=${stop.nodeId} path=${stop.path} (${stop.reason}, layer ${layerOf(stop.path, false, false)})\n${text ? numberedLines(text, 1, 40).text : "(not read)"}`;
   });
   let parsed: unknown;
@@ -98,20 +120,40 @@ export async function runLearn(
     parsed = parseModelJson(reply);
   } catch (error) {
     signal?.throwIfAborted();
-    return fallback(stops, `Gemma was unavailable (${error instanceof Error ? error.message : "error"}), so only the reading order is shown.`);
+    return fallback(
+      stops,
+      `Gemma was unavailable (${error instanceof Error ? error.message : "error"}), so only the reading order is shown.`,
+    );
   }
   const raw = (parsed as { steps?: unknown } | null)?.steps;
-  if (!Array.isArray(raw)) return fallback(stops, "Gemma returned an unusable reply, so only the reading order is shown.");
-  const described = new Map<string, { title?: unknown; description?: unknown }>();
+  if (!Array.isArray(raw))
+    return fallback(
+      stops,
+      "Gemma returned an unusable reply, so only the reading order is shown.",
+    );
+  const described = new Map<
+    string,
+    { title?: unknown; description?: unknown }
+  >();
   for (const entry of raw)
-    if (entry && typeof entry === "object" && typeof (entry as { node_id?: unknown }).node_id === "string")
-      described.set((entry as { node_id: string }).node_id, entry as { title?: unknown; description?: unknown });
+    if (
+      entry &&
+      typeof entry === "object" &&
+      typeof (entry as { node_id?: unknown }).node_id === "string"
+    )
+      described.set(
+        (entry as { node_id: string }).node_id,
+        entry as { title?: unknown; description?: unknown },
+      );
   const steps: LearnStep[] = stops.map((stop) => {
     const entry = described.get(stop.nodeId);
     return {
       nodeId: stop.nodeId,
       path: stop.path,
-      title: typeof entry?.title === "string" && entry.title.trim() ? entry.title.trim().slice(0, 60) : stop.reason,
+      title:
+        typeof entry?.title === "string" && entry.title.trim()
+          ? entry.title.trim().slice(0, 60)
+          : stop.reason,
       description:
         typeof entry?.description === "string" && entry.description.trim()
           ? entry.description.trim().slice(0, 400)

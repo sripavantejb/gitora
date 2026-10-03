@@ -2,10 +2,10 @@ import type { CodeNode, CodeNodeType } from "./types";
 
 export const NODE_WIDTH = 216;
 export const NODE_HEIGHT = 36;
-export const COLUMN_GAP = 64;
-export const ROW_GAP = 12;
+const COLUMN_GAP = 64;
+const ROW_GAP = 12;
 /** Children shown per expanded node before a "+N more" entry. */
-export const DEFAULT_CHILD_LIMIT = 30;
+const DEFAULT_CHILD_LIMIT = 30;
 
 const TYPE_ORDER: Record<CodeNodeType, number> = {
   REPOSITORY: 0,
@@ -144,9 +144,14 @@ export function layoutMap(
   );
   const servicesX = (maxDepth + 1) * columnWidth + COLUMN_GAP * 2;
   const treeHeight = Math.max(1, row) * rowHeight;
-  const serviceStart = Math.max(0, (treeHeight - services.length * rowHeight * 1.4) / 2);
+  const serviceStart = Math.max(
+    0,
+    (treeHeight - services.length * rowHeight * 1.4) / 2,
+  );
   services
-    .sort((a, b) => a.type.localeCompare(b.type) || a.label.localeCompare(b.label))
+    .sort(
+      (a, b) => a.type.localeCompare(b.type) || a.label.localeCompare(b.label),
+    )
     .forEach((node, position) => {
       laid.push({
         id: node.id,
@@ -173,7 +178,10 @@ export function layoutMap(
     nodes: laid,
     links,
     width: (services.length ? servicesX : maxDepth * columnWidth) + NODE_WIDTH,
-    height: Math.max(treeHeight, serviceStart + services.length * rowHeight * 1.4),
+    height: Math.max(
+      treeHeight,
+      serviceStart + services.length * rowHeight * 1.4,
+    ),
     visibleFor,
   };
 }

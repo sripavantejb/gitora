@@ -86,7 +86,7 @@ export function BarList({ rows }: { rows: Array<[string, number]> }) {
       {rows.map(([label, count]) => (
         <li key={label} className="relative flex items-center gap-2 text-sm">
           <div
-            className="absolute inset-y-0 left-0 rounded-sm bg-lime/35 dark:bg-lime/20"
+            className="bg-lime/35 dark:bg-lime/20 absolute inset-y-0 left-0 rounded-sm"
             style={{ width: `${(count / max) * 100}%` }}
           />
           <span className="relative min-w-0 flex-1 truncate px-1.5 py-0.5 font-mono text-[13px]">

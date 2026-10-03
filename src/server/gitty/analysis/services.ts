@@ -11,7 +11,7 @@ export interface ServiceEntry {
   imports: Partial<Record<Ecosystem, string[]>>;
 }
 
-export const SERVICE_CATALOG: ServiceEntry[] = [
+const SERVICE_CATALOG: ServiceEntry[] = [
   {
     id: "postgres",
     label: "PostgreSQL",
@@ -143,7 +143,10 @@ export const SERVICE_CATALOG: ServiceEntry[] = [
     id: "supabase",
     label: "Supabase",
     kind: "EXTERNAL_SERVICE",
-    imports: { js: ["@supabase/supabase-js", "@supabase/ssr"], py: ["supabase"] },
+    imports: {
+      js: ["@supabase/supabase-js", "@supabase/ssr"],
+      py: ["supabase"],
+    },
   },
   {
     id: "openai",
@@ -254,7 +257,11 @@ export const SERVICE_CATALOG: ServiceEntry[] = [
     id: "monitoring",
     label: "Error monitoring",
     kind: "EXTERNAL_SERVICE",
-    imports: { js: ["@sentry"], py: ["sentry_sdk"], go: ["github.com/getsentry"] },
+    imports: {
+      js: ["@sentry"],
+      py: ["sentry_sdk"],
+      go: ["github.com/getsentry"],
+    },
   },
   {
     id: "analytics",

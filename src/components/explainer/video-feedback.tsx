@@ -82,8 +82,8 @@ export function VideoFeedbackForm({
         What did you think of this video?
       </label>
       <p className={styles.hint}>
-        It goes straight to my inbox (I&apos;m sripavantejb, I make GitDiagram). What
-        worked, what felt off, what you wish it showed.
+        It goes straight to my inbox (I&apos;m sripavantejb, I make GitDiagram).
+        What worked, what felt off, what you wish it showed.
       </p>
       <textarea
         ref={field}

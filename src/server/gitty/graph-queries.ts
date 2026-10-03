@@ -13,8 +13,8 @@ import type { LoadedRepository } from "./repository";
 // resolved imports of files Gitty read, or a name match in their text. The
 // model receives these results; it never supplies relationships itself.
 
-export const MAX_IMPACT_DEPTH = 4;
-export const MAX_IMPACT_ENTRIES = 80;
+const MAX_IMPACT_DEPTH = 4;
+const MAX_IMPACT_ENTRIES = 80;
 const MAX_SEARCH_RESULTS = 40;
 
 const nodeIndexCache = new WeakMap<LoadedRepository, Map<string, CodeNode>>();
@@ -36,7 +36,10 @@ export function nodeById(
 }
 
 /** The repository paths a node stands for. */
-export function pathsOfNode(loaded: LoadedRepository, node: CodeNode): string[] {
+export function pathsOfNode(
+  loaded: LoadedRepository,
+  node: CodeNode,
+): string[] {
   if (node.type === "REPOSITORY") return [...loaded.texts.keys()];
   if (node.type === "DATABASE" || node.type === "EXTERNAL_SERVICE")
     return loaded.graph.edges
@@ -118,7 +121,11 @@ export function getDependents(
   const results = new Map<string, Relationship>();
   if (node.type === "DATABASE" || node.type === "EXTERNAL_SERVICE") {
     for (const edge of loaded.graph.edges)
-      if (edge.to === node.id && edge.evidence && !results.has(edge.evidence.path))
+      if (
+        edge.to === node.id &&
+        edge.evidence &&
+        !results.has(edge.evidence.path)
+      )
         results.set(edge.evidence.path, {
           path: edge.evidence.path,
           via: node.label,
@@ -193,7 +200,12 @@ export function getImpact(
       }
     }
     frontier = next;
-    if (depth === maxDepth && frontier.some((path) => importersOf(loaded, path).some((p) => !seen.has(p))))
+    if (
+      depth === maxDepth &&
+      frontier.some((path) =>
+        importersOf(loaded, path).some((p) => !seen.has(p)),
+      )
+    )
       truncated = true;
   }
   return {
@@ -222,7 +234,10 @@ export function searchCode(
   const max = Math.min(limit, MAX_SEARCH_RESULTS);
   for (const [path] of loaded.githubData.pathTypes) {
     if (hits.length >= max / 2) break;
-    if (path.toLowerCase().includes(needle) && loaded.githubData.pathTypes.get(path) === "blob")
+    if (
+      path.toLowerCase().includes(needle) &&
+      loaded.githubData.pathTypes.get(path) === "blob"
+    )
       hits.push({ path, line: 1, preview: `(path match) ${path}` });
   }
   for (const [path, text] of loaded.texts) {
@@ -296,7 +311,11 @@ export function findReferences(
     const lines = text.split("\n");
     for (let index = 0; index < lines.length; index++) {
       if (!pattern.test(lines[index]!)) continue;
-      hits.push({ path, line: index + 1, preview: lines[index]!.trim().slice(0, 200) });
+      hits.push({
+        path,
+        line: index + 1,
+        preview: lines[index]!.trim().slice(0, 200),
+      });
       if (hits.length >= limit) return hits;
     }
   }
@@ -348,7 +367,11 @@ export function getCallers(
       )
         continue;
       if (!pattern.test(lines[index]!)) continue;
-      if (/^\s*(?:export\s+)?(?:async\s+)?(?:function|def|fn|func)\b/.test(lines[index]!))
+      if (
+        /^\s*(?:export\s+)?(?:async\s+)?(?:function|def|fn|func)\b/.test(
+          lines[index]!,
+        )
+      )
         continue;
       sites.push({
         path,
@@ -375,10 +398,15 @@ export function getCallees(
   const end = symbol.endLine ?? lines.length;
   const body = lines.slice(start - 1, end).join("\n");
   const called = new Set<string>();
-  for (const match of body.matchAll(/(?<![\w$])([A-Za-z_$][\w$]*)\s*\(|<([A-Z][\w$]*)[\s/>]/g))
+  for (const match of body.matchAll(
+    /(?<![\w$])([A-Za-z_$][\w$]*)\s*\(|<([A-Z][\w$]*)[\s/>]/g,
+  ))
     called.add(match[1] ?? match[2]!);
   called.delete(symbol.name);
-  const candidates = [symbol.path, ...(loaded.references.get(symbol.path) ?? [])];
+  const candidates = [
+    symbol.path,
+    ...(loaded.references.get(symbol.path) ?? []),
+  ];
   const hits: SymbolHit[] = [];
   for (const path of candidates) {
     for (const entry of loaded.analyses.get(path)?.symbols ?? []) {

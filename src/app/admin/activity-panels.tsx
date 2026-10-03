@@ -87,7 +87,7 @@ export const LiveFeed = memo(function LiveFeed({
               className={`h-7 rounded-md border-2 border-black px-2.5 text-xs font-semibold text-[hsl(var(--foreground))] ${TOUCH} ${
                 filter === option.value
                   ? "bg-lime dark:bg-[hsl(var(--neo-button))] dark:text-black"
-                  : "bg-white hover:bg-purple dark:bg-black/20 dark:hover:bg-black/30"
+                  : "hover:bg-purple bg-white dark:bg-black/20 dark:hover:bg-black/30"
               }`}
             >
               {option.label}

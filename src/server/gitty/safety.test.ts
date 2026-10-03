@@ -34,7 +34,9 @@ describe("checkRepositoryPath", () => {
   });
 
   it("rejects paths the repository does not have", () => {
-    expect(checkRepositoryPath("src/nope.ts", pathTypes)).toMatchObject({ ok: false });
+    expect(checkRepositoryPath("src/nope.ts", pathTypes)).toMatchObject({
+      ok: false,
+    });
   });
 
   it("accepts real files and normalizes a leading ./", () => {
@@ -52,38 +54,70 @@ describe("checkRepositoryPath", () => {
 
 describe("executeToolCall", () => {
   it("reads numbered lines of a real file", async () => {
-    const result = await executeToolCall(loaded, "read_file", { path: "src/server/db.ts", start_line: 2, end_line: 3 });
+    const result = await executeToolCall(loaded, "read_file", {
+      path: "src/server/db.ts",
+      start_line: 2,
+      end_line: 3,
+    });
     expect(result).toMatchObject({ ok: true });
     if (!result.ok) return;
     expect(result.text).toContain("2| import { Pool }");
-    expect(result.output.sources).toEqual([{ path: "src/server/db.ts", startLine: 2, endLine: 3 }]);
+    expect(result.output.sources).toEqual([
+      { path: "src/server/db.ts", startLine: 2, endLine: 3 },
+    ]);
   });
 
   it("refuses traversal, secrets, unknown tools and bad arguments", async () => {
-    await expect(executeToolCall(loaded, "read_file", { path: "../../etc/passwd" })).resolves.toMatchObject({ ok: false });
-    await expect(executeToolCall(loaded, "read_file", { path: ".env" })).resolves.toMatchObject({ ok: false });
-    await expect(executeToolCall(loaded, "run_shell", { command: "ls" })).resolves.toMatchObject({
+    await expect(
+      executeToolCall(loaded, "read_file", { path: "../../etc/passwd" }),
+    ).resolves.toMatchObject({ ok: false });
+    await expect(
+      executeToolCall(loaded, "read_file", { path: ".env" }),
+    ).resolves.toMatchObject({ ok: false });
+    await expect(
+      executeToolCall(loaded, "run_shell", { command: "ls" }),
+    ).resolves.toMatchObject({
       ok: false,
       error: "Unknown tool: run_shell",
     });
-    await expect(executeToolCall(loaded, "find_symbol", { name: 42 })).resolves.toMatchObject({ ok: false });
-    await expect(executeToolCall(loaded, "get_dependencies", {})).resolves.toMatchObject({ ok: false });
+    await expect(
+      executeToolCall(loaded, "find_symbol", { name: 42 }),
+    ).resolves.toMatchObject({ ok: false });
+    await expect(
+      executeToolCall(loaded, "get_dependencies", {}),
+    ).resolves.toMatchObject({ ok: false });
   });
 
   it("answers graph tools from the analysis", async () => {
-    const result = await executeToolCall(loaded, "get_dependents", { path: "src/server/db.ts" });
-    expect(result.ok && result.text).toContain("src/server/orders/repository.ts");
+    const result = await executeToolCall(loaded, "get_dependents", {
+      path: "src/server/db.ts",
+    });
+    expect(result.ok && result.text).toContain(
+      "src/server/orders/repository.ts",
+    );
   });
 });
 
 describe("citations", () => {
   it("parses double-bracket citations, including bracketed paths", () => {
     expect(
-      extractCitations("See [[src/app/[id]/page.tsx:3-9]] and [[src/a.ts:4]] and [[README.md]]."),
+      extractCitations(
+        "See [[src/app/[id]/page.tsx:3-9]] and [[src/a.ts:4]] and [[README.md]].",
+      ),
     ).toEqual([
-      { raw: "[[src/app/[id]/page.tsx:3-9]]", path: "src/app/[id]/page.tsx", startLine: 3, endLine: 9 },
+      {
+        raw: "[[src/app/[id]/page.tsx:3-9]]",
+        path: "src/app/[id]/page.tsx",
+        startLine: 3,
+        endLine: 9,
+      },
       { raw: "[[src/a.ts:4]]", path: "src/a.ts", startLine: 4, endLine: 4 },
-      { raw: "[[README.md]]", path: "README.md", startLine: undefined, endLine: undefined },
+      {
+        raw: "[[README.md]]",
+        path: "README.md",
+        startLine: undefined,
+        endLine: undefined,
+      },
     ]);
   });
 
@@ -93,9 +127,15 @@ describe("citations", () => {
     const check = await validateCitations(
       loaded,
       answer,
-      new Set(["src/server/orders/repository.ts", "src/server/db.ts", "src/invented.ts"]),
+      new Set([
+        "src/server/orders/repository.ts",
+        "src/server/db.ts",
+        "src/invented.ts",
+      ]),
     );
-    expect(check.sources).toEqual([{ path: "src/server/orders/repository.ts", startLine: 3, endLine: 5 }]);
+    expect(check.sources).toEqual([
+      { path: "src/server/orders/repository.ts", startLine: 3, endLine: 5 },
+    ]);
     expect(check.rejected).toEqual([
       "[[src/server/db.ts:1-999]]",
       "[[src/invented.ts:1]]",
@@ -106,22 +146,32 @@ describe("citations", () => {
 
 describe("model replies", () => {
   it("extracts JSON from fenced or chatty replies", () => {
-    expect(parseModelJson('Sure!\n```json\n{"ready": true}\n```')).toEqual({ ready: true });
+    expect(parseModelJson('Sure!\n```json\n{"ready": true}\n```')).toEqual({
+      ready: true,
+    });
     expect(parseModelJson('{"a": "}"} trailing')).toEqual({ a: "}" });
     expect(parseModelJson("no json here")).toBeNull();
   });
 
   it("parses tool decisions", () => {
-    expect(parseDecision('{"tool":"read_file","arguments":{"path":"a.ts"}}')).toEqual({
+    expect(
+      parseDecision('{"tool":"read_file","arguments":{"path":"a.ts"}}'),
+    ).toEqual({
       kind: "calls",
       calls: [{ tool: "read_file", arguments: { path: "a.ts" } }],
     });
-    expect(parseDecision('{"calls":[{"tool":"a"},{"tool":"b"},{"tool":"c"},{"tool":"d"}]}')).toMatchObject({
+    expect(
+      parseDecision(
+        '{"calls":[{"tool":"a"},{"tool":"b"},{"tool":"c"},{"tool":"d"}]}',
+      ),
+    ).toMatchObject({
       kind: "calls",
       calls: [{ tool: "a" }, { tool: "b" }, { tool: "c" }],
     });
     expect(parseDecision('{"ready": true}')).toEqual({ kind: "ready" });
-    expect(parseDecision("I think we should read the file")).toEqual({ kind: "malformed" });
+    expect(parseDecision("I think we should read the file")).toEqual({
+      kind: "malformed",
+    });
   });
 });
 

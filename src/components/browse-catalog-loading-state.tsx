@@ -24,7 +24,7 @@ export function BrowseCatalogLoadingState(props: BrowseCatalogControlsProps) {
             <col className="w-[244px] xl:w-[292px]" />
           </colgroup>
           <thead className="hidden lg:table-header-group">
-            <tr className="border-b-[3px] border-black bg-[hsl(var(--neo-panel-muted))] text-left text-sm tracking-[0.16em] uppercase dark:border-paper dark:bg-[hsl(var(--neo-panel-muted))]">
+            <tr className="dark:border-paper border-b-[3px] border-black bg-[hsl(var(--neo-panel-muted))] text-left text-sm tracking-[0.16em] uppercase dark:bg-[hsl(var(--neo-panel-muted))]">
               <th className="px-5 py-4 font-semibold">Repository</th>
               <th className="px-5 py-4 font-semibold">Stars</th>
               <th className="px-5 py-4 font-semibold">Last Generated</th>

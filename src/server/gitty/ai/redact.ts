@@ -29,19 +29,31 @@ const SECRET_ENV_NAME = /(KEY|TOKEN|SECRET|PASSWORD|PAT|PATS|CREDENTIAL)S?$/i;
 /** This server's own secret values, so they can never reach a model even if a repository echoes them. */
 function serverSecrets(): string[] {
   return Object.entries(process.env)
-    .filter(([name, value]) => SECRET_ENV_NAME.test(name) && value && value.trim().length >= 12)
+    .filter(
+      ([name, value]) =>
+        SECRET_ENV_NAME.test(name) && value && value.trim().length >= 12,
+    )
     .flatMap(([, value]) => value!.split(",").map((part) => part.trim()))
     .filter((value) => value.length >= 12);
 }
 
-export function redactSecrets(text: string, extra: string[] = serverSecrets()): string {
+export function redactSecrets(
+  text: string,
+  extra: string[] = serverSecrets(),
+): string {
   let result = text;
-  for (const secret of extra) if (result.includes(secret)) result = result.split(secret).join(REDACTED);
-  for (const pattern of SECRET_PATTERNS) result = result.replace(pattern, (match) =>
-    match.includes("://") ? match.replace(/:[^:@/]+@$/, `:${REDACTED}@`) : REDACTED,
-  );
-  return result.replace(ASSIGNED_SECRET, (_match, name: string, separator: string, quote: string) =>
-    `${name}${separator}${quote}${REDACTED}${quote}`,
+  for (const secret of extra)
+    if (result.includes(secret)) result = result.split(secret).join(REDACTED);
+  for (const pattern of SECRET_PATTERNS)
+    result = result.replace(pattern, (match) =>
+      match.includes("://")
+        ? match.replace(/:[^:@/]+@$/, `:${REDACTED}@`)
+        : REDACTED,
+    );
+  return result.replace(
+    ASSIGNED_SECRET,
+    (_match, name: string, separator: string, quote: string) =>
+      `${name}${separator}${quote}${REDACTED}${quote}`,
   );
 }
 
@@ -49,7 +61,10 @@ function redactRequest<T extends AiRequest>(request: T): T {
   const extra = serverSecrets();
   return {
     ...request,
-    messages: request.messages.map((message) => ({ ...message, content: redactSecrets(message.content, extra) })),
+    messages: request.messages.map((message) => ({
+      ...message,
+      content: redactSecrets(message.content, extra),
+    })),
   };
 }
 
@@ -63,8 +78,9 @@ export function withRedaction(provider: AiProvider): AiProvider {
   };
   if (provider.completeWithTools) {
     const completeWithTools = provider.completeWithTools.bind(provider);
-    wrapped.completeWithTools = (request: AiRequest & { tools: AiToolSpec[] }): Promise<AiToolTurn> =>
-      completeWithTools(redactRequest(request));
+    wrapped.completeWithTools = (
+      request: AiRequest & { tools: AiToolSpec[] },
+    ): Promise<AiToolTurn> => completeWithTools(redactRequest(request));
   }
   return wrapped;
 }

@@ -72,15 +72,30 @@ function textOf(response: GeminiResponse): string {
     .join("");
 }
 
-async function errorFrom(response: Response, model: string): Promise<AiProviderError> {
+async function errorFrom(
+  response: Response,
+  model: string,
+): Promise<AiProviderError> {
   const detail = await readErrorDetail(response);
   console.warn(
-    JSON.stringify({ event: "gitty.ai.request_failed", provider: "gemma", endpoint: "google", status: response.status, detail: detail.slice(0, 500) }),
+    JSON.stringify({
+      event: "gitty.ai.request_failed",
+      provider: "gemma",
+      endpoint: "google",
+      status: response.status,
+      detail: detail.slice(0, 500),
+    }),
   );
   if (response.status === 400 && /api key/i.test(detail))
-    return new AiProviderError("The Gemma API key was rejected. Check GEMMA_API_KEY.", 401);
+    return new AiProviderError(
+      "The Gemma API key was rejected. Check GEMMA_API_KEY.",
+      401,
+    );
   if (response.status === 400 && /developer instruction|system/i.test(detail))
-    return new AiProviderError("This Gemma model rejected the request format.", 400);
+    return new AiProviderError(
+      "This Gemma model rejected the request format.",
+      400,
+    );
   if (response.status === 401 || response.status === 403)
     return new AiProviderError(
       "The Gemma API key is missing permission for this model.",
@@ -97,7 +112,10 @@ async function errorFrom(response: Response, model: string): Promise<AiProviderE
       429,
     );
   if (response.status >= 500)
-    return new AiProviderError(`Gemma had a server error (${response.status}). Try again shortly.`, response.status);
+    return new AiProviderError(
+      `Gemma had a server error (${response.status}). Try again shortly.`,
+      response.status,
+    );
   return new AiProviderError(
     `Gemma request failed (${response.status}).`,
     response.status,
@@ -163,7 +181,8 @@ export class GemmaProvider implements AiProvider {
       request,
     );
     try {
-      if (!response.ok || !response.body) throw await errorFrom(response, this.model);
+      if (!response.ok || !response.body)
+        throw await errorFrom(response, this.model);
       for await (const data of readSseData(response.body)) {
         touch();
         let chunk: GeminiResponse;
@@ -178,7 +197,8 @@ export class GemmaProvider implements AiProvider {
         if (text) yield text;
       }
     } catch (error) {
-      if (timedOut()) throw new AiProviderError("Gemma stopped responding mid-answer.", 504);
+      if (timedOut())
+        throw new AiProviderError("Gemma stopped responding mid-answer.", 504);
       throw error;
     } finally {
       done();

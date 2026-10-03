@@ -1,6 +1,13 @@
 "use client";
 
-import { GraduationCap, Maximize2, MessageSquare, Minimize2, Route as RouteIcon, Search } from "lucide-react";
+import {
+  GraduationCap,
+  Maximize2,
+  MessageSquare,
+  Minimize2,
+  Route as RouteIcon,
+  Search,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import type { CodeNode } from "~/features/gitty/types";
@@ -84,9 +91,24 @@ export function CommandSearch({
         });
     } else {
       commands.push(
-        { key: "learn", icon: <GraduationCap className="h-4 w-4" />, title: "Teach me this repo", command: { kind: "learn" } },
-        { key: "fit", icon: <Maximize2 className="h-4 w-4" />, title: "Fit map to view", command: { kind: "fit" } },
-        { key: "collapse", icon: <Minimize2 className="h-4 w-4" />, title: "Collapse all", command: { kind: "collapse" } },
+        {
+          key: "learn",
+          icon: <GraduationCap className="h-4 w-4" />,
+          title: "Teach me this repo",
+          command: { kind: "learn" },
+        },
+        {
+          key: "fit",
+          icon: <Maximize2 className="h-4 w-4" />,
+          title: "Fit map to view",
+          command: { kind: "fit" },
+        },
+        {
+          key: "collapse",
+          icon: <Minimize2 className="h-4 w-4" />,
+          title: "Collapse all",
+          command: { kind: "collapse" },
+        },
       );
     }
     const matches = lower
@@ -121,9 +143,18 @@ export function CommandSearch({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-ink/40 px-4 pt-[12vh]" onClick={onClose} role="dialog" aria-modal aria-label="Search the codebase">
-      <div className="w-full max-w-xl border-[3px] border-ink bg-white shadow-[8px_8px_0_0_#0a0a0a]" onClick={(event) => event.stopPropagation()}>
-        <div className="flex items-center gap-2 border-b-[3px] border-ink px-3">
+    <div
+      className="bg-ink/40 fixed inset-0 z-50 flex items-start justify-center px-4 pt-[12vh]"
+      onClick={onClose}
+      role="dialog"
+      aria-modal
+      aria-label="Search the codebase"
+    >
+      <div
+        className="border-ink w-full max-w-xl border-[3px] bg-white shadow-[8px_8px_0_0_#0a0a0a]"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="border-ink flex items-center gap-2 border-b-[3px] px-3">
           <Search className="h-4 w-4 shrink-0" aria-hidden />
           <input
             ref={inputRef}
@@ -150,28 +181,52 @@ export function CommandSearch({
             role="combobox"
             aria-expanded
             aria-controls="gitty-command-results"
-            aria-activedescendant={items[active] ? `gitty-cmd-${active}` : undefined}
+            aria-activedescendant={
+              items[active] ? `gitty-cmd-${active}` : undefined
+            }
           />
-          <kbd className="border-2 border-ink px-1.5 text-[10px] font-bold">ESC</kbd>
+          <kbd className="border-ink border-2 px-1.5 text-[10px] font-bold">
+            ESC
+          </kbd>
         </div>
-        <ul id="gitty-command-results" role="listbox" className="max-h-[50vh] overflow-y-auto py-1">
+        <ul
+          id="gitty-command-results"
+          role="listbox"
+          className="max-h-[50vh] overflow-y-auto py-1"
+        >
           {items.map((item, index) => (
-            <li key={item.key} id={`gitty-cmd-${index}`} role="option" aria-selected={index === active}>
+            <li
+              key={item.key}
+              id={`gitty-cmd-${index}`}
+              role="option"
+              aria-selected={index === active}
+            >
               <button
                 type="button"
                 onMouseEnter={() => setActive(index)}
                 onClick={() => choose(item)}
-                className={cn("flex w-full items-center gap-3 px-3 py-2 text-left", index === active && "bg-lime")}
+                className={cn(
+                  "flex w-full items-center gap-3 px-3 py-2 text-left",
+                  index === active && "bg-lime",
+                )}
               >
                 {item.icon}
                 <span className="min-w-0">
-                  <span className="block truncate text-[13.5px] font-semibold">{item.title}</span>
-                  {item.detail && <span className="block truncate font-mono text-[11px] text-ink/60">{item.detail}</span>}
+                  <span className="block truncate text-[13.5px] font-semibold">
+                    {item.title}
+                  </span>
+                  {item.detail && (
+                    <span className="text-ink/60 block truncate font-mono text-[11px]">
+                      {item.detail}
+                    </span>
+                  )}
                 </span>
               </button>
             </li>
           ))}
-          {!items.length && <li className="px-3 py-4 text-[13px] text-ink/60">No matches.</li>}
+          {!items.length && (
+            <li className="text-ink/60 px-3 py-4 text-[13px]">No matches.</li>
+          )}
         </ul>
       </div>
     </div>

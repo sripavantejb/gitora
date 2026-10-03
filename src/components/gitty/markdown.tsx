@@ -7,7 +7,7 @@ import { citationKey } from "~/features/gitty/citations";
 import type { SourceRef } from "~/features/gitty/types";
 import { cn } from "~/lib/utils";
 
-export type CitationState = "pending" | "verified" | "rejected";
+type CitationState = "pending" | "verified" | "rejected";
 
 interface MarkdownProps {
   text: string;
@@ -58,8 +58,10 @@ function Inline({
           <button
             key={key++}
             type="button"
-            onClick={() => onOpenSource(verified!.get(citationKey(source)) ?? source)}
-            className="mx-0.5 inline-flex items-center gap-1 border-2 border-ink bg-lime px-1.5 py-px align-baseline font-mono text-[11px] font-semibold text-ink hover:bg-ink hover:text-lime"
+            onClick={() =>
+              onOpenSource(verified!.get(citationKey(source)) ?? source)
+            }
+            className="border-ink bg-lime text-ink hover:bg-ink hover:text-lime mx-0.5 inline-flex items-center gap-1 border-2 px-1.5 py-px align-baseline font-mono text-[11px] font-semibold"
             title={`Open ${source.path}`}
           >
             <FileCode2 className="h-3 w-3" aria-hidden />
@@ -72,9 +74,13 @@ function Inline({
               "mx-0.5 inline-flex items-center gap-1 border-2 px-1.5 py-px align-baseline font-mono text-[11px]",
               state === "pending"
                 ? "border-ink/40 text-ink/60"
-                : "border-dashed border-orange text-orange line-through",
+                : "border-orange text-orange border-dashed line-through",
             )}
-            title={state === "rejected" ? "Unverified reference: removed from the evidence" : "Checking reference"}
+            title={
+              state === "rejected"
+                ? "Unverified reference: removed from the evidence"
+                : "Checking reference"
+            }
           >
             {label}
           </span>
@@ -82,7 +88,10 @@ function Inline({
       );
     } else if (code) {
       parts.push(
-        <code key={key++} className="border border-ink/20 bg-paper px-1 py-px font-mono text-[0.85em]">
+        <code
+          key={key++}
+          className="border-ink/20 bg-paper border px-1 py-px font-mono text-[0.85em]"
+        >
           {code.slice(1, -1)}
         </code>,
       );
@@ -93,7 +102,13 @@ function Inline({
     } else if (link) {
       const linkMatch = /^\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)$/.exec(link)!;
       parts.push(
-        <a key={key++} href={linkMatch[2]} target="_blank" rel="noreferrer noopener" className="neo-link">
+        <a
+          key={key++}
+          href={linkMatch[2]}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="neo-link"
+        >
           {linkMatch[1]}
         </a>,
       );
@@ -116,10 +131,14 @@ export function Markdown(props: MarkdownProps) {
     if (/^```/.test(line)) {
       const body: string[] = [];
       index++;
-      while (index < lines.length && !/^```/.test(lines[index]!)) body.push(lines[index++]!);
+      while (index < lines.length && !/^```/.test(lines[index]!))
+        body.push(lines[index++]!);
       index++;
       blocks.push(
-        <pre key={key++} className="my-2 overflow-x-auto border-2 border-ink bg-ink p-3 font-mono text-[12px] leading-relaxed text-paper">
+        <pre
+          key={key++}
+          className="border-ink bg-ink text-paper my-2 overflow-x-auto border-2 p-3 font-mono text-[12px] leading-relaxed"
+        >
           <code>{body.join("\n")}</code>
         </pre>,
       );
@@ -132,8 +151,10 @@ export function Markdown(props: MarkdownProps) {
         <p
           key={key++}
           className={cn(
-            "mt-3 mb-1 font-archivo text-ink uppercase",
-            level <= 2 ? "text-[13px] tracking-wide" : "text-[12px] tracking-wide opacity-80",
+            "font-archivo text-ink mt-3 mb-1 uppercase",
+            level <= 2
+              ? "text-[13px] tracking-wide"
+              : "text-[12px] tracking-wide opacity-80",
           )}
           role="heading"
           aria-level={level + 2}
@@ -147,13 +168,22 @@ export function Markdown(props: MarkdownProps) {
     if (/^\s*(?:[-*]|\d+\.)\s+/.test(line)) {
       const ordered = /^\s*\d+\./.test(line);
       const items: string[] = [];
-      while (index < lines.length && /^\s*(?:[-*]|\d+\.)\s+/.test(lines[index]!)) {
+      while (
+        index < lines.length &&
+        /^\s*(?:[-*]|\d+\.)\s+/.test(lines[index]!)
+      ) {
         items.push(lines[index]!.replace(/^\s*(?:[-*]|\d+\.)\s+/, ""));
         index++;
       }
       const List = ordered ? "ol" : "ul";
       blocks.push(
-        <List key={key++} className={cn("my-1.5 space-y-1 pl-5", ordered ? "list-decimal" : "list-disc")}>
+        <List
+          key={key++}
+          className={cn(
+            "my-1.5 space-y-1 pl-5",
+            ordered ? "list-decimal" : "list-disc",
+          )}
+        >
           {items.map((item, itemIndex) => (
             <li key={itemIndex}>{inline(item)}</li>
           ))}
@@ -183,5 +213,5 @@ export function Markdown(props: MarkdownProps) {
       </p>,
     );
   }
-  return <div className="text-[13.5px] leading-relaxed text-ink">{blocks}</div>;
+  return <div className="text-ink text-[13.5px] leading-relaxed">{blocks}</div>;
 }

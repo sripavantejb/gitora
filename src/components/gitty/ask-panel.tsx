@@ -1,11 +1,24 @@
 "use client";
 
-import { AlertTriangle, ArrowUp, Loader2, Sparkles, Square, Wrench } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowUp,
+  Loader2,
+  Sparkles,
+  Square,
+  Wrench,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { GittyApiError, streamAsk, type RepoRef } from "~/features/gitty/api";
 import { citationKey } from "~/features/gitty/citations";
-import type { AiStatus, AskMode, ChatTurn, CodeNode, SourceRef } from "~/features/gitty/types";
+import type {
+  AiStatus,
+  AskMode,
+  ChatTurn,
+  CodeNode,
+  SourceRef,
+} from "~/features/gitty/types";
 import { cn } from "~/lib/utils";
 
 import { Markdown } from "./markdown";
@@ -36,7 +49,11 @@ const ACTION_LABEL: Record<AskMode, string> = {
   impact: "What breaks if this changes?",
 };
 
-const NODE_SUGGESTIONS = ["What does this do?", "Where is it used?", "How would I extend it safely?"];
+const NODE_SUGGESTIONS = [
+  "What does this do?",
+  "Where is it used?",
+  "How would I extend it safely?",
+];
 const REPO_SUGGESTIONS = [
   "What does this repository do?",
   "Where does a request enter the system?",
@@ -51,7 +68,13 @@ interface AskPanelProps {
   onOpenSource(source: SourceRef): void;
 }
 
-export function AskPanel({ repoRef, node, ai, request, onOpenSource }: AskPanelProps) {
+export function AskPanel({
+  repoRef,
+  node,
+  ai,
+  request,
+  onOpenSource,
+}: AskPanelProps) {
   const scope = node?.id ?? "repo";
   const [threads, setThreads] = useState<Record<string, Message[]>>({});
   const [input, setInput] = useState("");
@@ -66,7 +89,10 @@ export function AskPanel({ repoRef, node, ai, request, onOpenSource }: AskPanelP
   }, [messages]);
 
   const update = (key: string, change: (messages: Message[]) => Message[]) =>
-    setThreads((current) => ({ ...current, [key]: change(current[key] ?? []) }));
+    setThreads((current) => ({
+      ...current,
+      [key]: change(current[key] ?? []),
+    }));
 
   const send = async (mode: AskMode, question: string) => {
     if (busy || !ai.configured) return;
@@ -83,30 +109,49 @@ export function AskPanel({ repoRef, node, ai, request, onOpenSource }: AskPanelP
     const controller = new AbortController();
     abortRef.current = controller;
     const patch = (change: (message: Message) => Message) =>
-      update(key, (list) => [...list.slice(0, -1), change(list[list.length - 1]!)]);
+      update(key, (list) => [
+        ...list.slice(0, -1),
+        change(list[list.length - 1]!),
+      ]);
     try {
       for await (const event of streamAsk(
         repoRef,
         { mode, question, nodeId: node?.id, history },
         controller.signal,
       )) {
-        if (event.type === "status") patch((message) => ({ ...message, status: event.message }));
+        if (event.type === "status")
+          patch((message) => ({ ...message, status: event.message }));
         else if (event.type === "tool")
           patch((message) => ({
             ...message,
-            tools: [...(message.tools ?? []), `${event.name}${event.summary ? ` · ${event.summary}` : ""}`],
+            tools: [
+              ...(message.tools ?? []),
+              `${event.name}${event.summary ? ` · ${event.summary}` : ""}`,
+            ],
           }));
         else if (event.type === "chunk")
-          patch((message) => ({ ...message, status: undefined, content: message.content + event.text }));
+          patch((message) => ({
+            ...message,
+            status: undefined,
+            content: message.content + event.text,
+          }));
         else if (event.type === "sources")
-          patch((message) => ({ ...message, sources: event.sources, rejected: event.rejected }));
-        else if (event.type === "error") patch((message) => ({ ...message, error: event.message }));
+          patch((message) => ({
+            ...message,
+            sources: event.sources,
+            rejected: event.rejected,
+          }));
+        else if (event.type === "error")
+          patch((message) => ({ ...message, error: event.message }));
       }
     } catch (error) {
       if (!controller.signal.aborted)
         patch((message) => ({
           ...message,
-          error: error instanceof GittyApiError ? error.message : "The answer could not be loaded. Please retry.",
+          error:
+            error instanceof GittyApiError
+              ? error.message
+              : "The answer could not be loaded. Please retry.",
         }));
     } finally {
       patch((message) => ({
@@ -114,7 +159,11 @@ export function AskPanel({ repoRef, node, ai, request, onOpenSource }: AskPanelP
         status: undefined,
         done: true,
         sources: message.sources ?? [],
-        error: message.error ?? (controller.signal.aborted && !message.content ? "Stopped." : undefined),
+        error:
+          message.error ??
+          (controller.signal.aborted && !message.content
+            ? "Stopped."
+            : undefined),
       }));
       setBusy(false);
       if (abortRef.current === controller) abortRef.current = null;
@@ -134,28 +183,36 @@ export function AskPanel({ repoRef, node, ai, request, onOpenSource }: AskPanelP
 
   return (
     <section className="flex h-full min-h-0 flex-col" aria-label="Ask Gemma">
-      <header className="flex items-center gap-2 border-b-[3px] border-ink bg-ink px-4 py-3 text-paper">
-        <Sparkles className="h-4 w-4 text-lime" aria-hidden />
+      <header className="border-ink bg-ink text-paper flex items-center gap-2 border-b-[3px] px-4 py-3">
+        <Sparkles className="text-lime h-4 w-4" aria-hidden />
         <div className="min-w-0">
-          <p className="font-archivo text-[13px] tracking-wide text-lime uppercase">Ask Gemma</p>
-          <p className="truncate text-[11px] text-paper/70">
-            {node ? `About ${NODE_TYPE_LABEL[node.type].toLowerCase()} ${node.label}` : "About the whole repository"}
+          <p className="font-archivo text-lime text-[13px] tracking-wide uppercase">
+            Ask Gemma
+          </p>
+          <p className="text-paper/70 truncate text-[11px]">
+            {node
+              ? `About ${NODE_TYPE_LABEL[node.type].toLowerCase()} ${node.label}`
+              : "About the whole repository"}
             {ai.configured ? ` · ${ai.model}` : ""}
           </p>
         </div>
       </header>
 
       {!ai.configured && (
-        <div className="m-3 flex gap-2 border-2 border-ink bg-[#fff4c2] p-3 text-[12.5px] text-ink">
+        <div className="border-ink text-ink m-3 flex gap-2 border-2 bg-[#fff4c2] p-3 text-[12.5px]">
           <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
           <p>
-            <strong>AI is not configured.</strong> {ai.reason} The map, search, dependencies, dependents, impact and source
-            views still work.
+            <strong>AI is not configured.</strong> {ai.reason} The map, search,
+            dependencies, dependents, impact and source views still work.
           </p>
         </div>
       )}
 
-      <div ref={scrollRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3" aria-live="polite">
+      <div
+        ref={scrollRef}
+        className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3"
+        aria-live="polite"
+      >
         {!messages.length && ai.configured && (
           <div className="space-y-2">
             <p className="meta-label">Try asking</p>
@@ -164,7 +221,7 @@ export function AskPanel({ repoRef, node, ai, request, onOpenSource }: AskPanelP
                 key={suggestion}
                 type="button"
                 onClick={() => void send("ask", suggestion)}
-                className="block w-full border-2 border-ink bg-white px-3 py-2 text-left text-[13px] font-medium shadow-[2px_2px_0_0_#0a0a0a] hover:-translate-y-px hover:bg-lime"
+                className="border-ink hover:bg-lime block w-full border-2 bg-white px-3 py-2 text-left text-[13px] font-medium shadow-[2px_2px_0_0_#0a0a0a] hover:-translate-y-px"
               >
                 {suggestion}
               </button>
@@ -173,17 +230,24 @@ export function AskPanel({ repoRef, node, ai, request, onOpenSource }: AskPanelP
         )}
         {messages.map((message, index) =>
           message.role === "user" ? (
-            <div key={index} className="ml-8 border-2 border-ink bg-lime px-3 py-2 text-[13px] font-semibold text-ink">
+            <div
+              key={index}
+              className="border-ink bg-lime text-ink ml-8 border-2 px-3 py-2 text-[13px] font-semibold"
+            >
               {message.content}
             </div>
           ) : (
-            <AssistantMessage key={index} message={message} onOpenSource={onOpenSource} />
+            <AssistantMessage
+              key={index}
+              message={message}
+              onOpenSource={onOpenSource}
+            />
           ),
         )}
       </div>
 
       <form
-        className="border-t-[3px] border-ink bg-white p-3"
+        className="border-ink border-t-[3px] bg-white p-3"
         onSubmit={(event) => {
           event.preventDefault();
           const question = input.trim();
@@ -205,16 +269,32 @@ export function AskPanel({ repoRef, node, ai, request, onOpenSource }: AskPanelP
             rows={2}
             maxLength={2000}
             disabled={!ai.configured}
-            placeholder={ai.configured ? (node ? `Ask about ${node.label}…` : "Ask about this repository…") : "AI is not configured"}
+            placeholder={
+              ai.configured
+                ? node
+                  ? `Ask about ${node.label}…`
+                  : "Ask about this repository…"
+                : "AI is not configured"
+            }
             className="neo-input min-h-[44px] flex-1 resize-none px-3 py-2 text-[13px]"
             aria-label="Question for Gemma"
           />
           {busy ? (
-            <button type="button" onClick={() => abortRef.current?.abort()} className="neo-button-muted grid h-11 w-11 place-items-center" aria-label="Stop">
+            <button
+              type="button"
+              onClick={() => abortRef.current?.abort()}
+              className="neo-button-muted grid h-11 w-11 place-items-center"
+              aria-label="Stop"
+            >
               <Square className="h-4 w-4" />
             </button>
           ) : (
-            <button type="submit" disabled={!ai.configured || !input.trim()} className="neo-button grid h-11 w-11 place-items-center disabled:opacity-50" aria-label="Send">
+            <button
+              type="submit"
+              disabled={!ai.configured || !input.trim()}
+              className="neo-button grid h-11 w-11 place-items-center disabled:opacity-50"
+              aria-label="Send"
+            >
               <ArrowUp className="h-4 w-4" />
             </button>
           )}
@@ -224,18 +304,36 @@ export function AskPanel({ repoRef, node, ai, request, onOpenSource }: AskPanelP
   );
 }
 
-function AssistantMessage({ message, onOpenSource }: { message: Message; onOpenSource(source: SourceRef): void }) {
+function AssistantMessage({
+  message,
+  onOpenSource,
+}: {
+  message: Message;
+  onOpenSource(source: SourceRef): void;
+}) {
   const verified = useMemo(
-    () => (message.sources ? new Map(message.sources.map((source) => [citationKey(source), source])) : undefined),
+    () =>
+      message.sources
+        ? new Map(
+            message.sources.map((source) => [citationKey(source), source]),
+          )
+        : undefined,
     [message.sources],
   );
-  const rejected = useMemo(() => new Set(message.rejected ?? []), [message.rejected]);
+  const rejected = useMemo(
+    () => new Set(message.rejected ?? []),
+    [message.rejected],
+  );
   return (
-    <div className="border-2 border-ink bg-white p-3 shadow-[3px_3px_0_0_#0a0a0a]">
+    <div className="border-ink border-2 bg-white p-3 shadow-[3px_3px_0_0_#0a0a0a]">
       {message.tools && message.tools.length > 0 && (
-        <details className="mb-2 text-[11.5px] text-ink/70" open={!message.done}>
+        <details
+          className="text-ink/70 mb-2 text-[11.5px]"
+          open={!message.done}
+        >
           <summary className="flex cursor-pointer items-center gap-1 font-semibold">
-            <Wrench className="h-3 w-3" aria-hidden /> {message.tools.length} tool call{message.tools.length === 1 ? "" : "s"}
+            <Wrench className="h-3 w-3" aria-hidden /> {message.tools.length}{" "}
+            tool call{message.tools.length === 1 ? "" : "s"}
           </summary>
           <ul className="mt-1 space-y-0.5 pl-4 font-mono">
             {message.tools.map((tool, index) => (
@@ -248,23 +346,34 @@ function AssistantMessage({ message, onOpenSource }: { message: Message; onOpenS
       )}
       {message.status && !message.content && (
         <div className="space-y-2" aria-busy>
-          <p className="flex items-center gap-2 text-[12px] font-semibold text-ink/70">
-            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> {message.status}
+          <p className="text-ink/70 flex items-center gap-2 text-[12px] font-semibold">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />{" "}
+            {message.status}
           </p>
           <div className="gitty-skeleton h-3 w-11/12" />
           <div className="gitty-skeleton h-3 w-8/12" />
         </div>
       )}
       {message.content && (
-        <Markdown text={message.content} verified={message.done ? verified : undefined} rejected={rejected} onOpenSource={onOpenSource} />
+        <Markdown
+          text={message.content}
+          verified={message.done ? verified : undefined}
+          rejected={rejected}
+          onOpenSource={onOpenSource}
+        />
       )}
       {message.error && (
-        <p className={cn("mt-2 flex items-center gap-1.5 text-[12.5px] font-semibold", message.error === "Stopped." ? "text-ink/60" : "text-orange")}>
+        <p
+          className={cn(
+            "mt-2 flex items-center gap-1.5 text-[12.5px] font-semibold",
+            message.error === "Stopped." ? "text-ink/60" : "text-orange",
+          )}
+        >
           <AlertTriangle className="h-3.5 w-3.5" aria-hidden /> {message.error}
         </p>
       )}
       {message.done && message.sources && message.sources.length > 0 && (
-        <div className="mt-3 border-t-2 border-dashed border-ink/30 pt-2">
+        <div className="border-ink/30 mt-3 border-t-2 border-dashed pt-2">
           <p className="meta-label mb-1">Verified sources</p>
           <div className="flex flex-wrap gap-1.5">
             {message.sources.map((source) => (
@@ -272,19 +381,26 @@ function AssistantMessage({ message, onOpenSource }: { message: Message; onOpenS
                 key={citationKey(source)}
                 type="button"
                 onClick={() => onOpenSource(source)}
-                className="border-2 border-ink bg-paper px-1.5 py-0.5 font-mono text-[11px] hover:bg-lime"
+                className="border-ink bg-paper hover:bg-lime border-2 px-1.5 py-0.5 font-mono text-[11px]"
                 title={source.path}
               >
                 {source.path}
-                {source.startLine ? `:${source.startLine}${source.endLine && source.endLine !== source.startLine ? `-${source.endLine}` : ""}` : ""}
+                {source.startLine
+                  ? `:${source.startLine}${source.endLine && source.endLine !== source.startLine ? `-${source.endLine}` : ""}`
+                  : ""}
               </button>
             ))}
           </div>
         </div>
       )}
-      {message.done && !message.error && message.content && message.sources?.length === 0 && (
-        <p className="mt-2 text-[11.5px] text-ink/60">No verified source references in this answer.</p>
-      )}
+      {message.done &&
+        !message.error &&
+        message.content &&
+        message.sources?.length === 0 && (
+          <p className="text-ink/60 mt-2 text-[11.5px]">
+            No verified source references in this answer.
+          </p>
+        )}
     </div>
   );
 }

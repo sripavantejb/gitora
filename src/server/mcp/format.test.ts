@@ -19,11 +19,7 @@ describe("parseRepositoryInput", () => {
       "vercel",
       "next.js",
     ],
-    [
-      "github.com/sripavantejb/gitora",
-      "sripavantejb",
-      "gitora",
-    ],
+    ["github.com/sripavantejb/gitora", "sripavantejb", "gitora"],
     ["www.github.com/a/b?tab=readme", "a", "b"],
     ["git@github.com:facebook/react.git", "facebook", "react"],
     ["http://localhost:3000/fastapi/fastapi", "fastapi", "fastapi"],

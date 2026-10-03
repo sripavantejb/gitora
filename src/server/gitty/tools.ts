@@ -30,9 +30,9 @@ import { traceCandidates } from "./trace";
 // bounded JSON result. Nothing here runs commands, writes files or reads
 // outside the repository's own listing.
 
-export const MAX_TOOL_RESULT_CHARACTERS = 12_000;
+const MAX_TOOL_RESULT_CHARACTERS = 12_000;
 
-export interface ToolOutput {
+interface ToolOutput {
   result: unknown;
   /** Repository locations the result showed the model. */
   sources: SourceRef[];
@@ -72,7 +72,11 @@ function resolveTarget(loaded: LoadedRepository, args: Target): CodeNode {
     if (node) return node;
     throw new ToolError(`Unknown node_id: ${args.node_id}`);
   }
-  const checked = checkRepositoryPath(args.path, loaded.githubData.pathTypes, "any");
+  const checked = checkRepositoryPath(
+    args.path,
+    loaded.githubData.pathTypes,
+    "any",
+  );
   if (!checked.ok) throw new ToolError(checked.reason);
   const node = nodeForPath(loaded, checked.path);
   if (!node) throw new ToolError(`${checked.path} is not on the map.`);
@@ -91,9 +95,12 @@ function symbolTarget(loaded: LoadedRepository, args: Target) {
   };
 }
 
-export class ToolError extends Error {}
+class ToolError extends Error {}
 
-const relationships = (list: ReturnType<typeof getDependencies>, limit = 40) => ({
+const relationships = (
+  list: ReturnType<typeof getDependencies>,
+  limit = 40,
+) => ({
   count: list.length,
   items: list.slice(0, limit).map((item) => ({
     path: item.path,
@@ -101,24 +108,28 @@ const relationships = (list: ReturnType<typeof getDependencies>, limit = 40) => 
     kind: item.kind,
     evidence: item.evidence,
   })),
-  note:
-    "From resolved imports in the files Gitty analyzed. Dynamic, HTTP, event and configuration wiring is not included.",
+  note: "From resolved imports in the files Gitty analyzed. Dynamic, HTTP, event and configuration wiring is not included.",
 });
 
 const evidenceSources = (list: ReturnType<typeof getDependencies>) =>
   list.flatMap((item) => (item.evidence ? [item.evidence] : []));
 
-export const TOOLS: ToolDefinition<unknown>[] = [
+const TOOLS: ToolDefinition<unknown>[] = [
   define({
     name: "read_file",
-    description: "Read lines of a repository file (max 400 lines per call), numbered for citation.",
+    description:
+      "Read lines of a repository file (max 400 lines per call), numbered for citation.",
     signature: '{"path": string, "start_line"?: number, "end_line"?: number}',
     schema: z.object({
       path: z.string().min(1).max(500),
       start_line: z.number().int().min(1).max(1_000_000).optional(),
       end_line: z.number().int().min(1).max(1_000_000).optional(),
     }),
-    async run(loaded, args: { path: string; start_line?: number; end_line?: number }, signal) {
+    async run(
+      loaded,
+      args: { path: string; start_line?: number; end_line?: number },
+      signal,
+    ) {
       const file = await readFile(loaded, args.path, signal);
       if (!file.ok) throw new ToolError(file.error);
       const lines = numberedLines(file.text, args.start_line, args.end_line);
@@ -129,7 +140,9 @@ export const TOOLS: ToolDefinition<unknown>[] = [
           total_lines: file.totalLines,
           content: lines.text,
         },
-        sources: [{ path: file.path, startLine: lines.start, endLine: lines.end }],
+        sources: [
+          { path: file.path, startLine: lines.start, endLine: lines.end },
+        ],
       };
     },
   }),
@@ -142,7 +155,11 @@ export const TOOLS: ToolDefinition<unknown>[] = [
       const hits = findSymbol(loaded, args.name);
       return {
         result: { matches: hits },
-        sources: hits.map((hit) => ({ path: hit.path, startLine: hit.startLine, endLine: hit.endLine })),
+        sources: hits.map((hit) => ({
+          path: hit.path,
+          startLine: hit.startLine,
+          endLine: hit.endLine,
+        })),
       };
     },
   }),
@@ -155,13 +172,18 @@ export const TOOLS: ToolDefinition<unknown>[] = [
       const hits = findReferences(loaded, args.name);
       return {
         result: { references: hits },
-        sources: hits.map((hit) => ({ path: hit.path, startLine: hit.line, endLine: hit.line })),
+        sources: hits.map((hit) => ({
+          path: hit.path,
+          startLine: hit.line,
+          endLine: hit.line,
+        })),
       };
     },
   }),
   define({
     name: "get_dependencies",
-    description: "What a node imports or uses (files, packages in the repo, databases, services).",
+    description:
+      "What a node imports or uses (files, packages in the repo, databases, services).",
     signature: '{"node_id"?: string, "path"?: string}',
     schema: target,
     run(loaded, args: Target) {
@@ -181,14 +203,22 @@ export const TOOLS: ToolDefinition<unknown>[] = [
   }),
   define({
     name: "get_callers",
-    description: "Call sites of a function or class (matched by name, so approximate).",
+    description:
+      "Call sites of a function or class (matched by name, so approximate).",
     signature: '{"node_id": string}',
     schema: target,
     run(loaded, args: Target) {
       const sites = getCallers(loaded, symbolTarget(loaded, args));
       return {
-        result: { callers: sites, note: "Matched by name; same-named functions are not told apart." },
-        sources: sites.map((site) => ({ path: site.path, startLine: site.line, endLine: site.line })),
+        result: {
+          callers: sites,
+          note: "Matched by name; same-named functions are not told apart.",
+        },
+        sources: sites.map((site) => ({
+          path: site.path,
+          startLine: site.line,
+          endLine: site.line,
+        })),
       };
     },
   }),
@@ -201,23 +231,33 @@ export const TOOLS: ToolDefinition<unknown>[] = [
       const hits = getCallees(loaded, symbolTarget(loaded, args));
       return {
         result: { callees: hits },
-        sources: hits.map((hit) => ({ path: hit.path, startLine: hit.startLine, endLine: hit.endLine })),
+        sources: hits.map((hit) => ({
+          path: hit.path,
+          startLine: hit.startLine,
+          endLine: hit.endLine,
+        })),
       };
     },
   }),
   define({
     name: "get_node_context",
-    description: "A node's metadata, children, relationships and source excerpt.",
+    description:
+      "A node's metadata, children, relationships and source excerpt.",
     signature: '{"node_id"?: string, "path"?: string}',
     schema: target,
     async run(loaded, args: Target, signal) {
-      const context = await buildNodeContext(loaded, resolveTarget(loaded, args), signal);
+      const context = await buildNodeContext(
+        loaded,
+        resolveTarget(loaded, args),
+        signal,
+      );
       return { result: context.text, sources: context.sources };
     },
   }),
   define({
     name: "get_repository_structure",
-    description: "Top-level layout, entry points, languages, services and README excerpt.",
+    description:
+      "Top-level layout, entry points, languages, services and README excerpt.",
     signature: "{}",
     schema: z.object({}).passthrough(),
     run(loaded) {
@@ -227,14 +267,19 @@ export const TOOLS: ToolDefinition<unknown>[] = [
   }),
   define({
     name: "search_code",
-    description: "Literal, case-insensitive text search over analyzed files and all paths.",
+    description:
+      "Literal, case-insensitive text search over analyzed files and all paths.",
     signature: '{"query": string}',
     schema: z.object({ query: z.string().min(2).max(120) }),
     run(loaded, args: { query: string }) {
       const hits = searchCode(loaded, args.query, 30);
       return {
         result: { matches: hits },
-        sources: hits.map((hit) => ({ path: hit.path, startLine: hit.line, endLine: hit.line })),
+        sources: hits.map((hit) => ({
+          path: hit.path,
+          startLine: hit.line,
+          endLine: hit.line,
+        })),
       };
     },
   }),
@@ -246,7 +291,11 @@ export const TOOLS: ToolDefinition<unknown>[] = [
     async run(loaded, args: { path?: string }, signal) {
       let path: string | undefined;
       if (args.path) {
-        const checked = checkRepositoryPath(args.path, loaded.githubData.pathTypes, "any");
+        const checked = checkRepositoryPath(
+          args.path,
+          loaded.githubData.pathTypes,
+          "any",
+        );
         if (!checked.ok) throw new ToolError(checked.reason);
         path = checked.path;
       }
@@ -256,7 +305,8 @@ export const TOOLS: ToolDefinition<unknown>[] = [
   }),
   define({
     name: "trace_feature",
-    description: "Candidate files for a feature, ordered UI → route → service → data, with import links.",
+    description:
+      "Candidate files for a feature, ordered UI → route → service → data, with import links.",
     signature: '{"feature": string}',
     schema: z.object({ feature: z.string().min(2).max(200) }),
     run(loaded, args: { feature: string }) {
@@ -302,7 +352,8 @@ export type ToolCallResult =
   | { ok: false; name: string; error: string };
 
 function truncateResult(value: unknown): string {
-  const text = typeof value === "string" ? value : JSON.stringify(value, null, 1);
+  const text =
+    typeof value === "string" ? value : JSON.stringify(value, null, 1);
   return text.length > MAX_TOOL_RESULT_CHARACTERS
     ? `${text.slice(0, MAX_TOOL_RESULT_CHARACTERS)}\n[result truncated]`
     : text;
@@ -317,7 +368,12 @@ export async function executeToolCall(
 ): Promise<ToolCallResult> {
   const toolName = typeof name === "string" ? name : "";
   const tool = TOOL_MAP.get(toolName);
-  if (!tool) return { ok: false, name: toolName, error: `Unknown tool: ${toolName || "(none)"}` };
+  if (!tool)
+    return {
+      ok: false,
+      name: toolName,
+      error: `Unknown tool: ${toolName || "(none)"}`,
+    };
   const parsed = tool.schema.safeParse(args ?? {});
   if (!parsed.success)
     return {
@@ -327,7 +383,12 @@ export async function executeToolCall(
     };
   try {
     const output = await tool.run(loaded, parsed.data, signal);
-    return { ok: true, name: toolName, output, text: truncateResult(output.result) };
+    return {
+      ok: true,
+      name: toolName,
+      output,
+      text: truncateResult(output.result),
+    };
   } catch (error) {
     signal?.throwIfAborted();
     return {

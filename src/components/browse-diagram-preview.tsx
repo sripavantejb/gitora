@@ -34,7 +34,7 @@ export function BrowseDiagramPreview({
       data-testid="mermaid-preview"
       className="neo-panel w-[360px] overflow-hidden rounded-lg"
     >
-      <div className="border-b-[3px] border-black bg-[hsl(var(--neo-panel-muted))] px-4 py-3 text-[11px] font-semibold tracking-[0.18em] uppercase dark:border-paper dark:bg-[hsl(var(--neo-panel-muted))]">
+      <div className="dark:border-paper border-b-[3px] border-black bg-[hsl(var(--neo-panel-muted))] px-4 py-3 text-[11px] font-semibold tracking-[0.18em] uppercase dark:bg-[hsl(var(--neo-panel-muted))]">
         Preview
       </div>
       <div className="border-b border-black/10 px-4 py-2 text-sm font-semibold break-all dark:border-white/10">

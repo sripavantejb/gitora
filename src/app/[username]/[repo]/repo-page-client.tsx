@@ -124,15 +124,14 @@ export default function RepoPageClient({
   return (
     <TooltipProvider delayDuration={500} skipDelayDuration={300}>
       <main>
-        <div className="mx-auto mt-4 flex max-w-6xl flex-wrap items-center justify-between gap-3 border-[3px] border-ink bg-lime px-4 py-2.5 shadow-[5px_5px_0_0_#0a0a0a] sm:mx-8 lg:mx-auto">
-          <p className="text-sm font-semibold text-ink">
+        <div className="border-ink bg-lime mx-auto mt-4 flex max-w-6xl flex-wrap items-center justify-between gap-3 border-[3px] px-4 py-2.5 shadow-[5px_5px_0_0_#0a0a0a] sm:mx-8 lg:mx-auto">
+          <p className="text-ink text-sm font-semibold">
             <span className="font-archivo uppercase">Gitty</span> · Click
-            through this codebase, trace features and ask Gemma about any
-            file.
+            through this codebase, trace features and ask Gemma about any file.
           </p>
           <Link
             href={`/${repository}/explore`}
-            className="inline-flex items-center gap-1.5 border-2 border-ink bg-ink px-3 py-1.5 text-xs font-bold text-lime uppercase hover:bg-white hover:text-ink"
+            className="border-ink bg-ink text-lime hover:text-ink inline-flex items-center gap-1.5 border-2 px-3 py-1.5 text-xs font-bold uppercase hover:bg-white"
           >
             <Network className="h-3.5 w-3.5" aria-hidden="true" />
             Explore with Gitty

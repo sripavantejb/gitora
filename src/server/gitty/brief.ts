@@ -34,24 +34,33 @@ export async function runBrief(
   if (cached) return cached;
 
   const context = await buildNodeContext(loaded, node, signal);
-  const answer = (
-    await provider.complete({
-      messages: [
-        { role: "system", content: INSTRUCTIONS },
-        { role: "user", content: `CONTEXT\n${context.text}\n\nExplain ${node.type} ${node.label}.` },
-      ],
-      temperature: 0.2,
-      maxOutputTokens: 400,
-      signal,
-    })
-  ).trim() || NO_EVIDENCE_MESSAGE;
+  const answer =
+    (
+      await provider.complete({
+        messages: [
+          { role: "system", content: INSTRUCTIONS },
+          {
+            role: "user",
+            content: `CONTEXT\n${context.text}\n\nExplain ${node.type} ${node.label}.`,
+          },
+        ],
+        temperature: 0.2,
+        maxOutputTokens: 400,
+        signal,
+      })
+    ).trim() || NO_EVIDENCE_MESSAGE;
   const check = await validateCitations(
     loaded,
     answer,
     new Set(context.sources.map((source) => source.path)),
     signal,
   );
-  const result: BriefResult = { brief: answer, sources: check.sources, rejected: check.rejected, model: provider.model };
+  const result: BriefResult = {
+    brief: answer,
+    sources: check.sources,
+    rejected: check.rejected,
+    model: provider.model,
+  };
   if (cache.size >= BRIEF_CACHE_LIMIT) cache.delete(cache.keys().next().value!);
   cache.set(key, result);
   return result;

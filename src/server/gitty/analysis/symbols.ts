@@ -5,7 +5,7 @@ import type { Ecosystem } from "./services";
 // the lines it spans. Regex-based on purpose: it runs on any language without
 // a parser, and every result points at a real line of the file.
 
-export type SymbolKind = "class" | "function" | "route";
+type SymbolKind = "class" | "function" | "route";
 
 export interface ExtractedSymbol {
   name: string;
@@ -18,7 +18,7 @@ export interface ExtractedSymbol {
   route?: string;
 }
 
-export interface ExternalImport {
+interface ExternalImport {
   specifier: string;
   line: number;
 }
@@ -29,10 +29,18 @@ export interface FileAnalysis {
   imports: ExternalImport[];
 }
 
-export const MAX_SYMBOLS_PER_FILE = 60;
+const MAX_SYMBOLS_PER_FILE = 60;
 const MAX_SPAN_LINES = 600;
 
-const HTTP_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"];
+const HTTP_METHODS = [
+  "GET",
+  "POST",
+  "PUT",
+  "PATCH",
+  "DELETE",
+  "HEAD",
+  "OPTIONS",
+];
 
 export function ecosystemOf(path: string): Ecosystem | null {
   if (/\.(?:[cm]?[jt]sx?|vue|svelte)$/i.test(path)) return "js";
@@ -69,9 +77,10 @@ function braceEnd(lines: string[], line: number): number {
   let opened = false;
   const last = Math.min(lines.length, line + MAX_SPAN_LINES);
   for (let index = line - 1; index < last; index++) {
-    const code = lines[index]!
-      .replace(/(["'`])(?:\\.|(?!\1).)*\1/g, '""')
-      .replace(/\/\/.*$/, "");
+    const code = lines[index]!.replace(
+      /(["'`])(?:\\.|(?!\1).)*\1/g,
+      '""',
+    ).replace(/\/\/.*$/, "");
     for (const char of code) {
       if (char === "{") {
         depth++;
@@ -114,7 +123,10 @@ export function nextRouteOf(path: string): string | null {
   if (app) {
     const segments = app[1]!
       .split("/")
-      .filter((segment) => segment && !/^\(.*\)$/.test(segment) && !segment.startsWith("@"));
+      .filter(
+        (segment) =>
+          segment && !/^\(.*\)$/.test(segment) && !segment.startsWith("@"),
+      );
     return `/${segments.join("/")}`;
   }
   const pages = /(?:^|\/)pages\/(api\/.*?)\.[cm]?[jt]s$/.exec(path);
@@ -225,7 +237,11 @@ const JVM_RULES: Rule[] = [
 ];
 
 const RUBY_RULES: Rule[] = [
-  { pattern: /^[\t ]*(?:class|module)[\t ]+([A-Z][\w:]*)/gm, kind: "class", name: 1 },
+  {
+    pattern: /^[\t ]*(?:class|module)[\t ]+([A-Z][\w:]*)/gm,
+    kind: "class",
+    name: 1,
+  },
   {
     pattern: /^[\t ]*def[\t ]+(?:self\.)?([A-Za-z_]\w*[?!=]?)/gm,
     kind: "function",
@@ -235,12 +251,14 @@ const RUBY_RULES: Rule[] = [
 
 const PHP_RULES: Rule[] = [
   {
-    pattern: /^[\t ]*(?:(?:abstract|final|readonly)[\t ]+)*(?:class|interface|trait|enum)[\t ]+([A-Za-z_]\w*)/gm,
+    pattern:
+      /^[\t ]*(?:(?:abstract|final|readonly)[\t ]+)*(?:class|interface|trait|enum)[\t ]+([A-Za-z_]\w*)/gm,
     kind: "class",
     name: 1,
   },
   {
-    pattern: /^[\t ]*(?:(?:public|protected|static|final|abstract)[\t ]+)*function[\t ]+([A-Za-z_]\w*)/gm,
+    pattern:
+      /^[\t ]*(?:(?:public|protected|static|final|abstract)[\t ]+)*function[\t ]+([A-Za-z_]\w*)/gm,
     kind: "function",
     name: 1,
   },
@@ -270,11 +288,7 @@ const KEYWORDS = new Set([
   "when",
 ]);
 
-function spanEnd(
-  ecosystem: Ecosystem,
-  lines: string[],
-  line: number,
-): number {
+function spanEnd(ecosystem: Ecosystem, lines: string[], line: number): number {
   if (ecosystem === "py") return indentEnd(lines, line, false);
   if (ecosystem === "ruby") return indentEnd(lines, line, true);
   return braceEnd(lines, line);
@@ -288,7 +302,12 @@ function routeSymbols(
   lines: string[],
 ): ExtractedSymbol[] {
   const routes: ExtractedSymbol[] = [];
-  const add = (method: string, route: string, offset: number, name?: string) => {
+  const add = (
+    method: string,
+    route: string,
+    offset: number,
+    name?: string,
+  ) => {
     const line = lineAt(starts, offset);
     const label = `${method.toUpperCase()} ${route || "/"}`;
     routes.push({
@@ -324,7 +343,10 @@ function routeSymbols(
       /^[\t ]*@[\w.]*?\.(get|post|put|patch|delete|route|api_route|websocket)\(\s*(?:path\s*=\s*)?[rf]?["']([^"'\n]{0,200})["']([^\n]*)/gm,
     )) {
       const after = text.slice(match.index + match[0].length);
-      const def = /^\s*(?:@[^\n]*\n\s*)*(?:async[\t ]+)?def[\t ]+([A-Za-z_]\w*)/.exec(after);
+      const def =
+        /^\s*(?:@[^\n]*\n\s*)*(?:async[\t ]+)?def[\t ]+([A-Za-z_]\w*)/.exec(
+          after,
+        );
       let method = match[1]!;
       if (method === "route" || method === "api_route") {
         const declared = /methods\s*=\s*\[\s*["'](\w+)["']/.exec(match[3]!);
@@ -345,7 +367,11 @@ function routeSymbols(
     for (const match of text.matchAll(
       /@(Get|Post|Put|Patch|Delete|Request)Mapping\s*(?:\(\s*(?:(?:value|path)\s*=\s*)?\{?\s*"([^"\n]*)")?/g,
     ))
-      add(match[1] === "Request" ? "ANY" : match[1]!, match[2] ?? "/", match.index);
+      add(
+        match[1] === "Request" ? "ANY" : match[1]!,
+        match[2] ?? "/",
+        match.index,
+      );
   } else if (ecosystem === "rust") {
     for (const match of text.matchAll(
       /#\[(get|post|put|patch|delete)\(\s*"([^"\n]{1,200})"/g,
@@ -412,23 +438,33 @@ function externalImports(
       push(specifier, match.index);
     }
   } else if (ecosystem === "py") {
-    for (const match of text.matchAll(/^[\t ]*from[\t ]+([A-Za-z_][\w.]*)[\t ]+import\b/gm))
+    for (const match of text.matchAll(
+      /^[\t ]*from[\t ]+([A-Za-z_][\w.]*)[\t ]+import\b/gm,
+    ))
       push(match[1]!, match.index);
     for (const match of text.matchAll(/^[\t ]*import[\t ]+([A-Za-z_][\w.]*)/gm))
       push(match[1]!, match.index);
   } else if (ecosystem === "go") {
-    for (const match of text.matchAll(/"([a-z0-9][\w.-]*\.[a-z]{2,}\/[^"\n]+)"/g))
+    for (const match of text.matchAll(
+      /"([a-z0-9][\w.-]*\.[a-z]{2,}\/[^"\n]+)"/g,
+    ))
       push(match[1]!, match.index);
     for (const match of text.matchAll(/"(database\/sql)"/g))
       push(match[1]!, match.index);
   } else if (ecosystem === "rust") {
-    for (const match of text.matchAll(/^[\t ]*(?:pub[\t ]+)?use[\t ]+([A-Za-z_]\w*(?:::\w+)*)/gm))
+    for (const match of text.matchAll(
+      /^[\t ]*(?:pub[\t ]+)?use[\t ]+([A-Za-z_]\w*(?:::\w+)*)/gm,
+    ))
       push(match[1]!, match.index);
   } else if (ecosystem === "jvm") {
-    for (const match of text.matchAll(/^[\t ]*import[\t ]+(?:static[\t ]+)?([\w.]+)/gm))
+    for (const match of text.matchAll(
+      /^[\t ]*import[\t ]+(?:static[\t ]+)?([\w.]+)/gm,
+    ))
       push(match[1]!, match.index);
   } else if (ecosystem === "ruby") {
-    for (const match of text.matchAll(/^[\t ]*require[\t ]+["']([^"'\n]+)["']/gm))
+    for (const match of text.matchAll(
+      /^[\t ]*require[\t ]+["']([^"'\n]+)["']/gm,
+    ))
       push(match[1]!, match.index);
   } else if (ecosystem === "php") {
     for (const match of text.matchAll(/^[\t ]*use[\t ]+([\w\\]+)/gm))
@@ -450,12 +486,19 @@ export function analyzeSource(path: string, text: string): FileAnalysis {
     for (const match of text.matchAll(rule.pattern)) {
       const name = match[rule.name];
       if (!name || KEYWORDS.has(name)) continue;
-      const line = lineAt(starts, match.index + (match[0].length - match[0].trimStart().length));
+      const line = lineAt(
+        starts,
+        match.index + (match[0].length - match[0].trimStart().length),
+      );
       const key = `${name}@${line}`;
       if (seen.has(key)) continue;
       seen.add(key);
       // A route handler is shown once, as its route.
-      if (routes.some((route) => route.name === name && Math.abs(route.line - line) <= 6))
+      if (
+        routes.some(
+          (route) => route.name === name && Math.abs(route.line - line) <= 6,
+        )
+      )
         continue;
       if (routeLines.has(line)) continue;
       symbols.push({
@@ -463,7 +506,9 @@ export function analyzeSource(path: string, text: string): FileAnalysis {
         kind: rule.kind,
         line,
         endLine: spanEnd(ecosystem, lines, line),
-        exported: rule.exported ? rule.exported(match as RegExpExecArray) : !name.startsWith("_"),
+        exported: rule.exported
+          ? rule.exported(match as RegExpExecArray)
+          : !name.startsWith("_"),
       });
     }
   }

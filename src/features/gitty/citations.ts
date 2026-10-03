@@ -2,7 +2,8 @@ import type { SourceRef } from "./types";
 
 // Answers cite code as [[path:start-end]], [[path:line]] or [[path]]. Double
 // brackets keep Next.js-style paths ("app/[id]/page.tsx") unambiguous.
-export const CITATION_PATTERN = /\[\[([^\n]+?)(?::(\d+)(?:-(\d+))?)?\]\](?!\])/g;
+const CITATION_PATTERN =
+  /\[\[([^\n]+?)(?::(\d+)(?:-(\d+))?)?\]\](?!\])/g;
 
 export interface Citation extends SourceRef {
   raw: string;
@@ -18,7 +19,8 @@ export function extractCitations(text: string): Citation[] {
       raw: match[0],
       path,
       startLine: start,
-      endLine: end !== undefined && start !== undefined && end < start ? start : end,
+      endLine:
+        end !== undefined && start !== undefined && end < start ? start : end,
     });
   }
   return citations;

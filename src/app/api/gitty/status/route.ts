@@ -29,6 +29,9 @@ export async function POST(request: Request) {
     return json({ ok: true, ai, latencyMs: Date.now() - started });
   } catch (error) {
     const failure = toPublicError(error, false);
-    return json({ ok: false, ai, error: failure.message, error_code: failure.code }, failure.status);
+    return json(
+      { ok: false, ai, error: failure.message, error_code: failure.code },
+      failure.status,
+    );
   }
 }

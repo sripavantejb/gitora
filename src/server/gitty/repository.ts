@@ -14,7 +14,7 @@ import type { FileAnalysis } from "./analysis/symbols";
 import { checkRepositoryPath } from "./paths";
 
 /** Source files read and analyzed per repository. */
-export const MAX_ANALYZED_FILES = 160;
+const MAX_ANALYZED_FILES = 160;
 /** Private reads go through the REST API, which has a smaller budget. */
 const MAX_ANALYZED_PRIVATE_FILES = 80;
 const READ_CONCURRENCY = 8;
@@ -23,7 +23,7 @@ const CACHE_TTL_MS = 10 * 60_000;
 const MAX_CACHED_REPOSITORIES = 6;
 const MAX_EXTRA_TEXT_CHARACTERS = 6_000_000;
 /** Lines returned per read_file call. */
-export const MAX_READ_LINES = 400;
+const MAX_READ_LINES = 400;
 
 export interface LoadedRepository {
   owner: string;
@@ -167,9 +167,9 @@ export function loadRepository(params: {
     const abort = () => reject(signal.reason);
     if (signal.aborted) return abort();
     signal.addEventListener("abort", abort, { once: true });
-    value.then(resolve, reject).finally(() =>
-      signal.removeEventListener("abort", abort),
-    );
+    value
+      .then(resolve, reject)
+      .finally(() => signal.removeEventListener("abort", abort));
   });
 }
 
@@ -218,7 +218,11 @@ export function numberedLines(
 ): { text: string; start: number; end: number } {
   const lines = text.split("\n");
   const from = Math.max(1, Math.min(start, lines.length));
-  const to = Math.min(lines.length, Math.max(from, end), from + MAX_READ_LINES - 1);
+  const to = Math.min(
+    lines.length,
+    Math.max(from, end),
+    from + MAX_READ_LINES - 1,
+  );
   return {
     start: from,
     end: to,
@@ -250,7 +254,9 @@ export async function getGitHistory(
   url.searchParams.set("sha", loaded.githubData.defaultBranch);
   if (path) url.searchParams.set("path", path);
   const headers = await getGitHubApiHeaders({
-    githubPat: loaded.githubData.usedPublicFallback ? undefined : loaded.githubPat,
+    githubPat: loaded.githubData.usedPublicFallback
+      ? undefined
+      : loaded.githubPat,
   });
   const timeout = AbortSignal.timeout(10_000);
   const response = await fetch(url, {

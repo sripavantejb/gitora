@@ -35,7 +35,10 @@ const MAX_BODY_BYTES = 64_000;
 async function gittyRateLimit(request: Request) {
   const max = readEnvInt("GITTY_RATE_LIMIT_MAX", 120);
   const windowSeconds = readEnvInt("GITTY_RATE_LIMIT_WINDOW_SECONDS", 600);
-  if (!process.env.UPSTASH_REDIS_REST_URL?.trim() || !process.env.UPSTASH_REDIS_REST_TOKEN?.trim()) {
+  if (
+    !process.env.UPSTASH_REDIS_REST_URL?.trim() ||
+    !process.env.UPSTASH_REDIS_REST_TOKEN?.trim()
+  ) {
     const clientIp = getClientIp(request);
     return clientIp
       ? consumeLocalRateLimit(toRateLimitBucket(clientIp), max, windowSeconds)
@@ -52,8 +55,7 @@ async function gittyRateLimit(request: Request) {
 }
 
 export type AdmittedRequest<T> =
-  | { ok: true; data: T; githubPat?: string }
-  | { ok: false; response: Response };
+  { ok: true; data: T; githubPat?: string } | { ok: false; response: Response };
 
 /** Same-origin JSON, a valid payload, the caller's GitHub token and a rate-limit slot. */
 export async function admitGittyRequest<T>(
@@ -115,15 +117,24 @@ export function toPublicError(error: unknown, hasToken: boolean): PublicError {
     };
   if (error instanceof Error) {
     if (error.message === REPOSITORY_TOO_LARGE_ERROR)
-      return { message: error.message, code: "REPOSITORY_TOO_LARGE", status: 413 };
+      return {
+        message: error.message,
+        code: "REPOSITORY_TOO_LARGE",
+        status: 413,
+      };
     if (error.message === EMPTY_REPOSITORY_ERROR)
       return {
-        message: "This repository is empty, so there is nothing to explore yet.",
+        message:
+          "This repository is empty, so there is nothing to explore yet.",
         code: "REPOSITORY_EMPTY",
         status: 422,
       };
     if (error.name === "AbortError" || error.name === "TimeoutError")
-      return { message: "The request timed out. Please retry.", code: "TIMEOUT", status: 504 };
+      return {
+        message: "The request timed out. Please retry.",
+        code: "TIMEOUT",
+        status: 504,
+      };
   }
   console.error(
     JSON.stringify({
@@ -131,10 +142,17 @@ export function toPublicError(error: unknown, hasToken: boolean): PublicError {
       error: error instanceof Error ? error.message : String(error),
     }),
   );
-  return { message: "Something went wrong. Please retry.", code: "INTERNAL", status: 500 };
+  return {
+    message: "Something went wrong. Please retry.",
+    code: "INTERNAL",
+    status: 500,
+  };
 }
 
 export function errorResponse(error: unknown, hasToken: boolean): Response {
   const failure = toPublicError(error, hasToken);
-  return json({ ok: false, error: failure.message, error_code: failure.code }, failure.status);
+  return json(
+    { ok: false, error: failure.message, error_code: failure.code },
+    failure.status,
+  );
 }

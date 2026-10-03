@@ -78,7 +78,9 @@ export class OpenAICompatibleProvider implements AiProvider {
         method: "POST",
         headers: {
           "content-type": "application/json",
-          ...(this.config.apiKey ? { authorization: `Bearer ${this.config.apiKey}` } : {}),
+          ...(this.config.apiKey
+            ? { authorization: `Bearer ${this.config.apiKey}` }
+            : {}),
           ...this.config.headers,
         },
         body: JSON.stringify({
@@ -93,27 +95,61 @@ export class OpenAICompatibleProvider implements AiProvider {
     );
   }
 
-  private async failure(response: Response, withTools = false): Promise<AiProviderError> {
+  private async failure(
+    response: Response,
+    withTools = false,
+  ): Promise<AiProviderError> {
     const detail = await readErrorDetail(response);
     const { label, endpoint } = this.options;
     console.warn(
-      JSON.stringify({ event: "gitty.ai.request_failed", provider: this.id, endpoint, status: response.status, detail: detail.slice(0, 500) }),
+      JSON.stringify({
+        event: "gitty.ai.request_failed",
+        provider: this.id,
+        endpoint,
+        status: response.status,
+        detail: detail.slice(0, 500),
+      }),
     );
     const status = response.status;
-    if (withTools && (status === 400 || status === 422 || status === 501) && /tool|function/i.test(detail))
+    if (
+      withTools &&
+      (status === 400 || status === 422 || status === 501) &&
+      /tool|function/i.test(detail)
+    )
       return new AiToolsUnsupportedError();
     if (status === 401 || status === 403)
-      return new AiProviderError(`${label} rejected the API key for ${endpoint}. Check the configured key.`, status);
+      return new AiProviderError(
+        `${label} rejected the API key for ${endpoint}. Check the configured key.`,
+        status,
+      );
     if (status === 404)
       return /model/i.test(detail)
-        ? new AiProviderError(`The model "${this.model}" isn't available at ${endpoint}. Check the model name.`, 404)
-        : new AiProviderError(`${endpoint} has no /chat/completions endpoint. The base URL usually ends in /v1.`, 404);
-    if (status === 400 && /context|too long|maximum.*tokens|max_tokens|token limit/i.test(detail))
-      return new AiProviderError(`The request was too large for the model's context window.`, 400);
+        ? new AiProviderError(
+            `The model "${this.model}" isn't available at ${endpoint}. Check the model name.`,
+            404,
+          )
+        : new AiProviderError(
+            `${endpoint} has no /chat/completions endpoint. The base URL usually ends in /v1.`,
+            404,
+          );
+    if (
+      status === 400 &&
+      /context|too long|maximum.*tokens|max_tokens|token limit/i.test(detail)
+    )
+      return new AiProviderError(
+        `The request was too large for the model's context window.`,
+        400,
+      );
     if (status === 429)
-      return new AiProviderError(`${label} is rate limited right now. Try again in a moment.`, 429);
+      return new AiProviderError(
+        `${label} is rate limited right now. Try again in a moment.`,
+        429,
+      );
     if (status >= 500)
-      return new AiProviderError(`${label} had a server error (${status}) at ${endpoint}. Try again shortly.`, status);
+      return new AiProviderError(
+        `${label} had a server error (${status}) at ${endpoint}. Try again shortly.`,
+        status,
+      );
     return new AiProviderError(`${label} request failed (${status}).`, status);
   }
 
@@ -128,18 +164,25 @@ export class OpenAICompatibleProvider implements AiProvider {
     }
   }
 
-  async completeWithTools(request: AiRequest & { tools: AiToolSpec[] }): Promise<AiToolTurn> {
+  async completeWithTools(
+    request: AiRequest & { tools: AiToolSpec[] },
+  ): Promise<AiToolTurn> {
     const { response, done } = await this.send(request, {
       stream: false,
       tools: request.tools.map((tool) => ({
         type: "function",
-        function: { name: tool.name, description: tool.description, parameters: tool.parameters },
+        function: {
+          name: tool.name,
+          description: tool.description,
+          parameters: tool.parameters,
+        },
       })),
       tool_choice: "auto",
     });
     try {
       if (!response.ok) throw await this.failure(response, true);
-      const message = ((await response.json()) as ChatCompletionResponse).choices?.[0]?.message;
+      const message = ((await response.json()) as ChatCompletionResponse)
+        .choices?.[0]?.message;
       const calls = (message?.tool_calls ?? []).flatMap((call, index) =>
         call.function?.name
           ? [
@@ -154,7 +197,9 @@ export class OpenAICompatibleProvider implements AiProvider {
             ]
           : [],
       );
-      return calls.length ? { kind: "tool_calls", calls } : { kind: "text", text: message?.content ?? "" };
+      return calls.length
+        ? { kind: "tool_calls", calls }
+        : { kind: "text", text: message?.content ?? "" };
     } finally {
       done();
     }
@@ -174,13 +219,19 @@ export class OpenAICompatibleProvider implements AiProvider {
         } catch {
           continue;
         }
-        if (chunk.error) throw new AiProviderError(`${this.options.label} stopped while answering.`);
+        if (chunk.error)
+          throw new AiProviderError(
+            `${this.options.label} stopped while answering.`,
+          );
         const text = chunk.choices?.[0]?.delta?.content;
         if (text) yield text;
       }
     } catch (error) {
       if (timedOut())
-        throw new AiProviderError(`${this.options.label} stopped responding mid-answer (${this.options.endpoint}).`, 504);
+        throw new AiProviderError(
+          `${this.options.label} stopped responding mid-answer (${this.options.endpoint}).`,
+          504,
+        );
       throw error;
     } finally {
       done();

@@ -144,7 +144,7 @@ export default function MainCard({ sponsor = true }: { sponsor?: boolean }) {
                   variant="outline"
                   title="Clear recent diagrams"
                   aria-label="Clear recent diagrams"
-                  className="size-9 shrink-0 border-2 border-black bg-transparent p-0 text-black hover:bg-purple sm:size-10 dark:border-paper dark:bg-transparent dark:text-[hsl(var(--foreground))] dark:hover:bg-[hsl(var(--neo-panel-muted))]"
+                  className="hover:bg-purple dark:border-paper size-9 shrink-0 border-2 border-black bg-transparent p-0 text-black sm:size-10 dark:bg-transparent dark:text-[hsl(var(--foreground))] dark:hover:bg-[hsl(var(--neo-panel-muted))]"
                   onClick={clearRecentDiagrams}
                 >
                   <X aria-hidden="true" />

@@ -99,10 +99,7 @@ export function HeaderClient({ starCount }: HeaderClientProps) {
       >
         <Logo />
 
-        <nav
-          aria-label="Primary"
-          className="hidden items-center gap-1 md:flex"
-        >
+        <nav aria-label="Primary" className="hidden items-center gap-1 md:flex">
           {VIDEOS_ENABLED && (
             <Link
               href="/videos"
@@ -126,7 +123,7 @@ export function HeaderClient({ starCount }: HeaderClientProps) {
           >
             Browse
           </Link>
-          <Link href="/#faq" className="nav-pill lg:inline-flex hidden">
+          <Link href="/#faq" className="nav-pill hidden lg:inline-flex">
             FAQ
           </Link>
           <button
@@ -150,10 +147,7 @@ export function HeaderClient({ starCount }: HeaderClientProps) {
         </nav>
 
         <div className="flex items-center gap-2">
-          <Link
-            href={GITHUB_REPO_URL}
-            className="nav-cta"
-          >
+          <Link href={GITHUB_REPO_URL} className="nav-cta">
             <GitHubIcon className="h-4 w-4" />
             <span className="hidden sm:inline">Star</span>
             <Suspense fallback={null}>

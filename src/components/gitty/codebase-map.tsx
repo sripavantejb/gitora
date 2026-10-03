@@ -98,8 +98,17 @@ function CodebaseMapInner({
   useEffect(() => {
     viewRef.current = view;
   }, [view]);
-  const drag = useRef<{ x: number; y: number; vx: number; vy: number; moved: boolean } | null>(null);
-  const byId = useMemo(() => new Map(layout.nodes.map((node) => [node.id, node])), [layout]);
+  const drag = useRef<{
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    moved: boolean;
+  } | null>(null);
+  const byId = useMemo(
+    () => new Map(layout.nodes.map((node) => [node.id, node])),
+    [layout],
+  );
 
   const fit = useCallback(() => {
     const element = containerRef.current;
@@ -107,7 +116,10 @@ function CodebaseMapInner({
     const { width, height } = element.getBoundingClientRect();
     const k = Math.min(
       1,
-      Math.max(MIN_SCALE, Math.min((width - 80) / layout.width, (height - 80) / layout.height)),
+      Math.max(
+        MIN_SCALE,
+        Math.min((width - 80) / layout.width, (height - 80) / layout.height),
+      ),
     );
     setView({
       k,
@@ -144,7 +156,16 @@ function CodebaseMapInner({
       const maxX = Math.max(...targets.map((node) => node.x + NODE_WIDTH));
       const maxY = Math.max(...targets.map((node) => node.y + NODE_HEIGHT));
       const { width, height } = element.getBoundingClientRect();
-      const k = Math.min(1.1, Math.max(MIN_SCALE, Math.min((width - 120) / (maxX - minX), (height - 120) / (maxY - minY))));
+      const k = Math.min(
+        1.1,
+        Math.max(
+          MIN_SCALE,
+          Math.min(
+            (width - 120) / (maxX - minX),
+            (height - 120) / (maxY - minY),
+          ),
+        ),
+      );
       setView({
         k,
         x: width / 2 - ((minX + maxX) / 2) * k,
@@ -154,7 +175,11 @@ function CodebaseMapInner({
     [byId, layout],
   );
 
-  useImperativeHandle(handleRef, () => ({ focus, fit, fitTo }), [focus, fit, fitTo]);
+  useImperativeHandle(handleRef, () => ({ focus, fit, fitTo }), [
+    focus,
+    fit,
+    fitTo,
+  ]);
 
   const fitted = useRef(false);
   useEffect(() => {
@@ -174,8 +199,14 @@ function CodebaseMapInner({
       setView((current) => {
         // Sideways trackpad scrolling pans; wheel and pinch zoom.
         if (!event.ctrlKey && !event.metaKey && event.deltaX !== 0)
-          return { ...current, x: current.x - event.deltaX, y: current.y - event.deltaY };
-        const factor = Math.exp(-event.deltaY * (event.ctrlKey ? 0.01 : 0.0015));
+          return {
+            ...current,
+            x: current.x - event.deltaX,
+            y: current.y - event.deltaY,
+          };
+        const factor = Math.exp(
+          -event.deltaY * (event.ctrlKey ? 0.01 : 0.0015),
+        );
         const k = Math.min(MAX_SCALE, Math.max(MIN_SCALE, current.k * factor));
         return {
           k,
@@ -202,18 +233,35 @@ function CodebaseMapInner({
     });
   };
 
-  const selectedVisible = selectedId ? layout.visibleFor(selectedId) : undefined;
-  const dependencyVisible = useMemo(() => visibleIds(layout, dependencyIds), [dependencyIds, layout]);
-  const dependentVisible = useMemo(() => visibleIds(layout, dependentIds), [dependentIds, layout]);
+  const selectedVisible = selectedId
+    ? layout.visibleFor(selectedId)
+    : undefined;
+  const dependencyVisible = useMemo(
+    () => visibleIds(layout, dependencyIds),
+    [dependencyIds, layout],
+  );
+  const dependentVisible = useMemo(
+    () => visibleIds(layout, dependentIds),
+    [dependentIds, layout],
+  );
   const traceVisible = useMemo(
     () =>
       traceIds
         .map((id) => layout.visibleFor(id))
-        .filter((id, index, list): id is string => Boolean(id) && list.indexOf(id) === index),
+        .filter(
+          (id, index, list): id is string =>
+            Boolean(id) && list.indexOf(id) === index,
+        ),
     [traceIds, layout],
   );
-  const traceOrder = useMemo(() => new Map(traceVisible.map((id, index) => [id, index + 1])), [traceVisible]);
-  const highlighting = Boolean(selectedVisible && (dependencyVisible.size || dependentVisible.size)) || traceVisible.length > 0;
+  const traceOrder = useMemo(
+    () => new Map(traceVisible.map((id, index) => [id, index + 1])),
+    [traceVisible],
+  );
+  const highlighting =
+    Boolean(
+      selectedVisible && (dependencyVisible.size || dependentVisible.size),
+    ) || traceVisible.length > 0;
 
   const serviceLinks = useMemo(() => {
     const seen = new Set<string>();
@@ -251,7 +299,13 @@ function CodebaseMapInner({
       className="gitty-map relative h-full w-full touch-none overflow-hidden select-none"
       onPointerDown={(event) => {
         if ((event.target as HTMLElement).closest("button")) return;
-        drag.current = { x: event.clientX, y: event.clientY, vx: view.x, vy: view.y, moved: false };
+        drag.current = {
+          x: event.clientX,
+          y: event.clientY,
+          vx: view.x,
+          vy: view.y,
+          moved: false,
+        };
         (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
       }}
       onPointerMove={(event) => {
@@ -260,7 +314,11 @@ function CodebaseMapInner({
         const dx = event.clientX - state.x;
         const dy = event.clientY - state.y;
         if (Math.abs(dx) + Math.abs(dy) > 3) state.moved = true;
-        setView((current) => ({ ...current, x: state.vx + dx, y: state.vy + dy }));
+        setView((current) => ({
+          ...current,
+          x: state.vx + dx,
+          y: state.vy + dy,
+        }));
       }}
       onPointerUp={() => {
         drag.current = null;
@@ -270,7 +328,9 @@ function CodebaseMapInner({
     >
       <div
         className="absolute top-0 left-0 origin-top-left"
-        style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.k})` }}
+        style={{
+          transform: `translate(${view.x}px, ${view.y}px) scale(${view.k})`,
+        }}
       >
         <svg
           width={layout.width + 40}
@@ -279,7 +339,15 @@ function CodebaseMapInner({
           aria-hidden
         >
           <defs>
-            <marker id="gitty-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <marker
+              id="gitty-arrow"
+              viewBox="0 0 10 10"
+              refX="9"
+              refY="5"
+              markerWidth="7"
+              markerHeight="7"
+              orient="auto-start-reverse"
+            >
               <path d="M0,0 L10,5 L0,10 z" fill="#0a0a0a" />
             </marker>
           </defs>
@@ -291,7 +359,10 @@ function CodebaseMapInner({
               <path
                 key={`${link.from}>${link.to}`}
                 d={elbow(parent, child)}
-                className={cn("fill-none stroke-[#0a0a0a]", highlighting ? "opacity-15" : "opacity-35")}
+                className={cn(
+                  "fill-none stroke-[#0a0a0a]",
+                  highlighting ? "opacity-15" : "opacity-35",
+                )}
                 strokeWidth={1.5}
               />
             );
@@ -299,12 +370,18 @@ function CodebaseMapInner({
           {serviceLinks.map((link) => {
             const d = relationPath(link.from, link.to);
             if (!d) return null;
-            const active = link.from === selectedVisible || link.to === selectedVisible;
+            const active =
+              link.from === selectedVisible || link.to === selectedVisible;
             return (
               <path
                 key={`svc:${link.from}>${link.to}`}
                 d={d}
-                className={cn("fill-none", active ? "stroke-ink opacity-90" : "stroke-[#0a0a0a] opacity-[0.08]")}
+                className={cn(
+                  "fill-none",
+                  active
+                    ? "stroke-ink opacity-90"
+                    : "stroke-[#0a0a0a] opacity-[0.08]",
+                )}
                 strokeWidth={active ? 2 : 1.25}
                 strokeDasharray="5 5"
               />
@@ -314,14 +391,26 @@ function CodebaseMapInner({
             [...dependencyVisible].map((id) => {
               const d = relationPath(selectedVisible, id);
               return d ? (
-                <path key={`dep:${id}`} d={d} className="gitty-flow fill-none stroke-[#2f7de1]" strokeWidth={2.5} markerEnd="url(#gitty-arrow)" />
+                <path
+                  key={`dep:${id}`}
+                  d={d}
+                  className="gitty-flow fill-none stroke-[#2f7de1]"
+                  strokeWidth={2.5}
+                  markerEnd="url(#gitty-arrow)"
+                />
               ) : null;
             })}
           {selectedVisible &&
             [...dependentVisible].map((id) => {
               const d = relationPath(id, selectedVisible);
               return d ? (
-                <path key={`rdep:${id}`} d={d} className="gitty-flow fill-none stroke-orange" strokeWidth={2.5} markerEnd="url(#gitty-arrow)" />
+                <path
+                  key={`rdep:${id}`}
+                  d={d}
+                  className="gitty-flow stroke-orange fill-none"
+                  strokeWidth={2.5}
+                  markerEnd="url(#gitty-arrow)"
+                />
               ) : null;
             })}
           {traceVisible.slice(1).map((id, index) => {
@@ -330,7 +419,12 @@ function CodebaseMapInner({
               <path
                 key={`trace:${index}`}
                 d={d}
-                className={cn("gitty-trace fill-none stroke-ink", activeTraceIndex !== null && activeTraceIndex !== index + 1 && "opacity-40")}
+                className={cn(
+                  "gitty-trace stroke-ink fill-none",
+                  activeTraceIndex !== null &&
+                    activeTraceIndex !== index + 1 &&
+                    "opacity-40",
+                )}
                 strokeWidth={4}
                 markerEnd="url(#gitty-arrow)"
               />
@@ -345,8 +439,13 @@ function CodebaseMapInner({
                 key={entry.id}
                 type="button"
                 onClick={() => onShowMore(entry.more!.parentId)}
-                className="absolute flex items-center justify-center border-2 border-dashed border-ink bg-paper text-xs font-semibold text-ink hover:bg-lime"
-                style={{ left: entry.x, top: entry.y, width: NODE_WIDTH, height: NODE_HEIGHT }}
+                className="border-ink bg-paper text-ink hover:bg-lime absolute flex items-center justify-center border-2 border-dashed text-xs font-semibold"
+                style={{
+                  left: entry.x,
+                  top: entry.y,
+                  width: NODE_WIDTH,
+                  height: NODE_HEIGHT,
+                }}
               >
                 +{entry.more.hidden} more
               </button>
@@ -357,51 +456,76 @@ function CodebaseMapInner({
           const isDependency = dependencyVisible.has(entry.id);
           const isDependent = dependentVisible.has(entry.id);
           const step = traceOrder.get(entry.id);
-          const related = selected || isDependency || isDependent || step !== undefined;
+          const related =
+            selected || isDependency || isDependent || step !== undefined;
           return (
             <div
               key={entry.id}
               className={cn(
-                "group absolute flex items-stretch border-2 border-ink transition-[opacity,box-shadow,transform] duration-150",
+                "group border-ink absolute flex items-stretch border-2 transition-[opacity,box-shadow,transform] duration-150",
                 NODE_FILL[node.type],
                 selected
-                  ? "z-20 -translate-x-0.5 -translate-y-0.5 !bg-lime !text-ink shadow-[4px_4px_0_0_#0a0a0a]"
+                  ? "!bg-lime !text-ink z-20 -translate-x-0.5 -translate-y-0.5 shadow-[4px_4px_0_0_#0a0a0a]"
                   : "shadow-[2px_2px_0_0_#0a0a0a] hover:z-10 hover:-translate-x-px hover:-translate-y-px hover:shadow-[4px_4px_0_0_#0a0a0a]",
                 isDependency && !selected && "ring-4 ring-[#2f7de1]/60",
-                isDependent && !selected && "ring-4 ring-orange/60",
-                step !== undefined && !selected && "ring-4 ring-ink/70",
+                isDependent && !selected && "ring-orange/60 ring-4",
+                step !== undefined && !selected && "ring-ink/70 ring-4",
                 highlighting && !related && "opacity-35",
                 node.type === "FILE" && !node.analyzed && "border-dashed",
               )}
-              style={{ left: entry.x, top: entry.y, width: NODE_WIDTH, height: NODE_HEIGHT }}
+              style={{
+                left: entry.x,
+                top: entry.y,
+                width: NODE_WIDTH,
+                height: NODE_HEIGHT,
+              }}
             >
               <button
                 type="button"
-                className="flex min-w-0 flex-1 items-center gap-2 px-2 text-left focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
+                className="focus-visible:outline-ink flex min-w-0 flex-1 items-center gap-2 px-2 text-left focus-visible:outline-3 focus-visible:outline-offset-2"
                 onClick={() => onSelect(entry.id)}
                 onDoubleClick={() => entry.hasChildren && onToggle(entry.id)}
                 title={`${NODE_TYPE_LABEL[node.type]}: ${node.path ?? node.label}`}
                 aria-pressed={selected}
               >
-                <Icon className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
-                <span className="truncate text-[13px] leading-none font-semibold">{node.label}</span>
-                {node.fileCount && node.type !== "FILE" && node.type !== "REPOSITORY" ? (
-                  <span className="ml-auto shrink-0 text-[10px] font-bold opacity-60">{node.fileCount}</span>
+                <Icon
+                  className="h-4 w-4 shrink-0"
+                  strokeWidth={2.25}
+                  aria-hidden
+                />
+                <span className="truncate text-[13px] leading-none font-semibold">
+                  {node.label}
+                </span>
+                {node.fileCount &&
+                node.type !== "FILE" &&
+                node.type !== "REPOSITORY" ? (
+                  <span className="ml-auto shrink-0 text-[10px] font-bold opacity-60">
+                    {node.fileCount}
+                  </span>
                 ) : null}
               </button>
               {entry.hasChildren && (
                 <button
                   type="button"
-                  className="flex w-7 shrink-0 items-center justify-center border-l-2 border-ink hover:bg-ink hover:text-lime"
+                  className="border-ink hover:bg-ink hover:text-lime flex w-7 shrink-0 items-center justify-center border-l-2"
                   onClick={() => onToggle(entry.id)}
-                  aria-label={entry.expanded ? `Collapse ${node.label}` : `Expand ${node.label}`}
+                  aria-label={
+                    entry.expanded
+                      ? `Collapse ${node.label}`
+                      : `Expand ${node.label}`
+                  }
                   aria-expanded={entry.expanded}
                 >
-                  <ChevronRight className={cn("h-4 w-4 transition-transform", entry.expanded && "rotate-180")} />
+                  <ChevronRight
+                    className={cn(
+                      "h-4 w-4 transition-transform",
+                      entry.expanded && "rotate-180",
+                    )}
+                  />
                 </button>
               )}
               {step !== undefined && (
-                <span className="absolute -top-3 -left-3 grid h-6 w-6 place-items-center rounded-full border-2 border-ink bg-ink text-[11px] font-bold text-lime">
+                <span className="border-ink bg-ink text-lime absolute -top-3 -left-3 grid h-6 w-6 place-items-center rounded-full border-2 text-[11px] font-bold">
                   {step}
                 </span>
               )}
@@ -410,18 +534,33 @@ function CodebaseMapInner({
         })}
       </div>
 
-      <div className="absolute right-3 bottom-3 flex flex-col border-2 border-ink bg-white shadow-[3px_3px_0_0_#0a0a0a]">
-        <button type="button" className="p-2 hover:bg-lime" onClick={() => zoomBy(1.25)} aria-label="Zoom in">
+      <div className="border-ink absolute right-3 bottom-3 flex flex-col border-2 bg-white shadow-[3px_3px_0_0_#0a0a0a]">
+        <button
+          type="button"
+          className="hover:bg-lime p-2"
+          onClick={() => zoomBy(1.25)}
+          aria-label="Zoom in"
+        >
           <Plus className="h-4 w-4" />
         </button>
-        <button type="button" className="border-y-2 border-ink p-2 hover:bg-lime" onClick={() => zoomBy(0.8)} aria-label="Zoom out">
+        <button
+          type="button"
+          className="border-ink hover:bg-lime border-y-2 p-2"
+          onClick={() => zoomBy(0.8)}
+          aria-label="Zoom out"
+        >
           <Minus className="h-4 w-4" />
         </button>
-        <button type="button" className="p-2 hover:bg-lime" onClick={fit} aria-label="Fit map to view">
+        <button
+          type="button"
+          className="hover:bg-lime p-2"
+          onClick={fit}
+          aria-label="Fit map to view"
+        >
           <Maximize2 className="h-4 w-4" />
         </button>
       </div>
-      <div className="pointer-events-none absolute bottom-3 left-3 border-2 border-ink bg-white px-2 py-1 text-[11px] font-semibold">
+      <div className="border-ink pointer-events-none absolute bottom-3 left-3 border-2 bg-white px-2 py-1 text-[11px] font-semibold">
         {Math.round(view.k * 100)}%
       </div>
     </div>

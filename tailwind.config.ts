@@ -10,10 +10,7 @@ export default {
         sans: ["var(--font-inter)", ...defaultTheme.fontFamily.sans],
         inter: ["var(--font-inter)", ...defaultTheme.fontFamily.sans],
         archivo: ["var(--font-archivo-black)", ...defaultTheme.fontFamily.sans],
-        display: [
-          "var(--font-space-grotesk)",
-          ...defaultTheme.fontFamily.sans,
-        ],
+        display: ["var(--font-space-grotesk)", ...defaultTheme.fontFamily.sans],
       },
       borderRadius: {
         lg: "var(--radius)",

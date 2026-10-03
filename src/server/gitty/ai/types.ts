@@ -18,7 +18,7 @@ export interface AiToolSpec {
 }
 
 /** A tool call exactly as the model sent it; nothing here has been validated. */
-export interface AiToolCall {
+interface AiToolCall {
   id: string;
   name: string;
   /** The raw JSON argument string from the model. */
@@ -26,8 +26,7 @@ export interface AiToolCall {
 }
 
 export type AiToolTurn =
-  | { kind: "tool_calls"; calls: AiToolCall[] }
-  | { kind: "text"; text: string };
+  { kind: "tool_calls"; calls: AiToolCall[] } | { kind: "text"; text: string };
 
 export interface AiProvider {
   /** Configured provider id, e.g. "gemma". */
@@ -36,7 +35,9 @@ export interface AiProvider {
   complete(request: AiRequest): Promise<string>;
   stream(request: AiRequest): AsyncIterable<string>;
   /** Native function calling, when the endpoint supports it. */
-  completeWithTools?(request: AiRequest & { tools: AiToolSpec[] }): Promise<AiToolTurn>;
+  completeWithTools?(
+    request: AiRequest & { tools: AiToolSpec[] },
+  ): Promise<AiToolTurn>;
 }
 
 /** A failure the user can act on; its message is safe to show. */

@@ -59,9 +59,7 @@ export const metadata: Metadata = {
     "gitdiagram",
     "localhost:3000",
   ],
-  authors: [
-    { name: "sripavantejb", url: "https://github.com/sripavantejb" },
-  ],
+  authors: [{ name: "sripavantejb", url: "https://github.com/sripavantejb" }],
   creator: "sripavantejb",
   openGraph: {
     type: "website",
@@ -105,7 +103,7 @@ export default function RootLayout({
         {/* Before any chunk loads: reload once if one fails (see chunk-reload.ts). */}
         <script dangerouslySetInnerHTML={{ __html: chunkReloadScript }} />
       </head>
-      <body className="flex min-h-screen flex-col font-inter">
+      <body className="font-inter flex min-h-screen flex-col">
         <a href="#main" className="skip-link">
           Skip to main content
         </a>
