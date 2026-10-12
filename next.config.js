@@ -33,7 +33,7 @@ const contentSecurityPolicy = [
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
-  "frame-ancestors 'none'",
+  "frame-ancestors 'self' chrome-extension:* http://localhost:*",
   // Safari upgrades localhost assets to HTTPS too, which breaks HTTP dev servers.
   ...(isDevelopment ? [] : ["upgrade-insecure-requests"]),
 ].join("; ");
@@ -51,7 +51,7 @@ const videoStagePolicy = [
   "object-src 'none'",
   "base-uri 'none'",
   "form-action 'none'",
-  "frame-ancestors 'self'",
+  "frame-ancestors 'self' chrome-extension:* http://localhost:*",
 ].join("; ");
 
 // Explainer videos are rendered to MP4 in headless Chromium with ffmpeg. Both
